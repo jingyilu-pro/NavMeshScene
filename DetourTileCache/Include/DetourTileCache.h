@@ -2,17 +2,14 @@
 #define DETOURTILECACHE_H
 
 #include "DetourStatus.h"
-#include <cinttypes>
-
 
 typedef unsigned int dtObstacleRef;
-
-typedef uint32_t dtCompressedTileRef;
+typedef unsigned int dtCompressedTileRef;
 
 /// Flags for addTile
 enum dtCompressedTileFlags
 {
-	DT_COMPRESSEDTILE_FREE_DATA = 0x01,					///< Navmesh owns the tile memory and should free it.
+	DT_COMPRESSEDTILE_FREE_DATA = 0x01	///< Navmesh owns the tile memory and should free it.
 };
 
 struct dtCompressedTile
@@ -32,14 +29,14 @@ enum ObstacleState
 	DT_OBSTACLE_EMPTY,
 	DT_OBSTACLE_PROCESSING,
 	DT_OBSTACLE_PROCESSED,
-	DT_OBSTACLE_REMOVING,
+	DT_OBSTACLE_REMOVING
 };
 
 enum ObstacleType
 {
 	DT_OBSTACLE_CYLINDER,
 	DT_OBSTACLE_BOX, // AABB
-	DT_OBSTACLE_ORIENTED_BOX, // OBB
+	DT_OBSTACLE_ORIENTED_BOX // OBB
 };
 
 struct dtObstacleCylinder
@@ -82,31 +79,24 @@ struct dtTileCacheObstacle
 	dtTileCacheObstacle* next;
 };
 
-#pragma pack(push, 1)
-
 struct dtTileCacheParams
 {
 	float orig[3];
 	float cs, ch;
-	int32_t width, height;
+	int width, height;
 	float walkableHeight;
 	float walkableRadius;
 	float walkableClimb;
 	float maxSimplificationError;
-    int32_t maxTiles;
-    int32_t maxObstacles;
+	int maxTiles;
+	int maxObstacles;
 };
-
-#pragma pack(pop)
 
 struct dtTileCacheMeshProcess
 {
-	virtual ~dtTileCacheMeshProcess() { }
-
-	virtual void process(struct dtNavMeshCreateParams* params,
-						 unsigned char* polyAreas, unsigned short* polyFlags) = 0;
+	virtual ~dtTileCacheMeshProcess();
+	virtual void process(struct dtNavMeshCreateParams* params, unsigned char* polyAreas, unsigned short* polyFlags) = 0;
 };
-
 
 class dtTileCache
 {
@@ -223,7 +213,7 @@ private:
 	enum ObstacleRequestAction
 	{
 		REQUEST_ADD,
-		REQUEST_REMOVE,
+		REQUEST_REMOVE
 	};
 	
 	struct ObstacleRequest
