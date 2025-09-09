@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -715,8 +715,8 @@ bool Sample_SoloMesh::handleBuild()
         params.walkableHeight = m_agentHeight;
         params.walkableRadius = m_agentRadius;
         params.walkableClimb = m_agentMaxClimb;
-        rcVcopy(params.bmin, m_pmesh->bmin);
-        rcVcopy(params.bmax, m_pmesh->bmax);
+        rcVcopy(params.bmin, m_pmesh->bounds.bmin);
+        rcVcopy(params.bmax, m_pmesh->bounds.bmax);
         params.cs = m_cfg.cs;
         params.ch = m_cfg.ch;
         params.buildBvTree = true;

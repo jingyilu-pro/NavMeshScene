@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -1185,8 +1185,8 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
         params.tileX = tx;
         params.tileY = ty;
         params.tileLayer = 0;
-        rcVcopy(params.bmin, m_pmesh->bmin);
-        rcVcopy(params.bmax, m_pmesh->bmax);
+        rcVcopy(params.bmin, m_pmesh->bounds.bmin);
+        rcVcopy(params.bmax, m_pmesh->bounds.bmax);
         params.cs = m_cfg.cs;
         params.ch = m_cfg.ch;
         params.buildBvTree = true;

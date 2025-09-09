@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -423,8 +423,8 @@ int Sample_TempObstacles::rasterizeTileLayers(
         header.tx = tx;
         header.ty = ty;
         header.tlayer = i;
-        dtVcopy(header.bmin, layer->bmin);
-        dtVcopy(header.bmax, layer->bmax);
+        dtVcopy(header.bmin, layer->bounds.bmin);
+        dtVcopy(header.bmax, layer->bounds.bmax);
 
         // Tile info.
         header.width = (unsigned char)layer->width;

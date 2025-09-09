@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -18,6 +18,8 @@
  
 #ifndef RECAST_H
 #define RECAST_H
+
+#include "Common.h"
 
 /// The value of PI used by Recast.
 static const float RC_PI = 3.14159265f;
@@ -316,10 +318,11 @@ struct rcHeightfield
 
 	int width;			///< The width of the heightfield. (Along the x-axis in cell units.)
 	int height;			///< The height of the heightfield. (Along the z-axis in cell units.)
-	float bmin[3];  	///< The minimum bounds in world space. [(x, y, z)]
-	float bmax[3];		///< The maximum bounds in world space. [(x, y, z)]
-	float cs;			///< The size of each cell. (On the xz-plane.)
-	float ch;			///< The height of each cell. (The minimum increment along the y-axis.)
+	//float bmin[3];  	///< The minimum bounds in world space. [(x, y, z)]
+	//float bmax[3];		///< The maximum bounds in world space. [(x, y, z)]
+	Bounds bounds;
+	//float cs;			///< The size of each cell. (On the xz-plane.)
+	//float ch;			///< The height of each cell. (The minimum increment along the y-axis.)
 	rcSpan** spans;		///< Heightfield of spans (width*height).
 
 	// memory pool for rcSpan instances.
@@ -363,10 +366,11 @@ struct rcCompactHeightfield
 	int borderSize;				///< The AABB border size used during the build of the field. (See: rcConfig::borderSize)
 	unsigned short maxDistance;	///< The maximum distance value of any span within the field. 
 	unsigned short maxRegions;	///< The maximum region id of any span within the field. 
-	float bmin[3];				///< The minimum bounds in world space. [(x, y, z)]
-	float bmax[3];				///< The maximum bounds in world space. [(x, y, z)]
-	float cs;					///< The size of each cell. (On the xz-plane.)
-	float ch;					///< The height of each cell. (The minimum increment along the y-axis.)
+	//float bmin[3];				///< The minimum bounds in world space. [(x, y, z)]
+	//float bmax[3];				///< The maximum bounds in world space. [(x, y, z)]
+	Bounds bounds;
+	//float cs;					///< The size of each cell. (On the xz-plane.)
+	//float ch;					///< The height of each cell. (The minimum increment along the y-axis.)
 	rcCompactCell* cells;		///< Array of cells. [Size: #width*#height]
 	rcCompactSpan* spans;		///< Array of spans. [Size: #spanCount]
 	unsigned short* dist;		///< Array containing border distance data. [Size: #spanCount]
@@ -382,10 +386,11 @@ private:
 /// @see rcHeightfieldLayerSet
 struct rcHeightfieldLayer
 {
-	float bmin[3];				///< The minimum bounds in world space. [(x, y, z)]
-	float bmax[3];				///< The maximum bounds in world space. [(x, y, z)]
-	float cs;					///< The size of each cell. (On the xz-plane.)
-	float ch;					///< The height of each cell. (The minimum increment along the y-axis.)
+	//float bmin[3];				///< The minimum bounds in world space. [(x, y, z)]
+	//float bmax[3];				///< The maximum bounds in world space. [(x, y, z)]
+	Bounds bounds;
+	//float cs;					///< The size of each cell. (On the xz-plane.)
+	//float ch;					///< The height of each cell. (The minimum increment along the y-axis.)
 	int width;					///< The width of the heightfield. (Along the x-axis in cell units.)
 	int height;					///< The height of the heightfield. (Along the z-axis in cell units.)
 	int minx;					///< The minimum x-bounds of usable data.
@@ -436,10 +441,11 @@ struct rcContourSet
 	
 	rcContour* conts;	///< An array of the contours in the set. [Size: #nconts]
 	int nconts;			///< The number of contours in the set.
-	float bmin[3];  	///< The minimum bounds in world space. [(x, y, z)]
-	float bmax[3];		///< The maximum bounds in world space. [(x, y, z)]
-	float cs;			///< The size of each cell. (On the xz-plane.)
-	float ch;			///< The height of each cell. (The minimum increment along the y-axis.)
+	//float bmin[3];  	///< The minimum bounds in world space. [(x, y, z)]
+	//float bmax[3];		///< The maximum bounds in world space. [(x, y, z)]
+	//float cs;			///< The size of each cell. (On the xz-plane.)
+	//float ch;			///< The height of each cell. (The minimum increment along the y-axis.)
+	Bounds bounds;
 	int width;			///< The width of the set. (Along the x-axis in cell units.) 
 	int height;			///< The height of the set. (Along the z-axis in cell units.) 
 	int borderSize;		///< The AABB border size used to generate the source data from which the contours were derived.
@@ -467,10 +473,11 @@ struct rcPolyMesh
 	int npolys;				///< The number of polygons.
 	int maxpolys;			///< The number of allocated polygons.
 	int nvp;				///< The maximum number of vertices per polygon.
-	float bmin[3];			///< The minimum bounds in world space. [(x, y, z)]
-	float bmax[3];			///< The maximum bounds in world space. [(x, y, z)]
-	float cs;				///< The size of each cell. (On the xz-plane.)
-	float ch;				///< The height of each cell. (The minimum increment along the y-axis.)
+	//float bmin[3];			///< The minimum bounds in world space. [(x, y, z)]
+	//float bmax[3];			///< The maximum bounds in world space. [(x, y, z)]
+	//float cs;				///< The size of each cell. (On the xz-plane.)
+	//float ch;				///< The height of each cell. (The minimum increment along the y-axis.)
+	Bounds bounds;
 	int borderSize;			///< The AABB border size used to generate the source data from which the mesh was derived.
 	float maxEdgeError;		///< The max error of the polygon edges in the mesh.
 	
@@ -755,6 +762,18 @@ inline void rcVmin(float* mn, const float* v)
 	mn[1] = rcMin(mn[1], v[1]);
 	mn[2] = rcMin(mn[2], v[2]);
 }
+inline void rcVmin(Vector3& mn, const float* v)
+{
+	mn.x = rcMin(mn.x, v[0]);
+	mn.y = rcMin(mn.y, v[1]);
+	mn.z = rcMin(mn.z, v[2]);
+}
+inline void rcVmin(Vector3& mn, const Vector3& v)
+{
+	mn.x = rcMin(mn.x, v.x);
+	mn.y = rcMin(mn.y, v.y);
+	mn.z = rcMin(mn.z, v.z);
+}
 
 /// Selects the maximum value of each element from the specified vectors.
 /// @param[in,out]	mx	A vector.  (Will be updated with the result.) [(x, y, z)]
@@ -765,6 +784,18 @@ inline void rcVmax(float* mx, const float* v)
 	mx[1] = rcMax(mx[1], v[1]);
 	mx[2] = rcMax(mx[2], v[2]);
 }
+inline void rcVmax(Vector3& mn, const float* v)
+{
+	mn.x = rcMax(mn.x, v[0]);
+	mn.y = rcMax(mn.y, v[1]);
+	mn.z = rcMax(mn.z, v[2]);
+}
+inline void rcVmax(Vector3& mn, const Vector3& v)
+{
+	mn.x = rcMax(mn.x, v.x);
+	mn.y = rcMax(mn.y, v.y);
+	mn.z = rcMax(mn.z, v.z);
+}
 
 /// Performs a vector copy.
 /// @param[out]		dest	The result. [(x, y, z)]
@@ -774,6 +805,31 @@ inline void rcVcopy(float* dest, const float* v)
 	dest[0] = v[0];
 	dest[1] = v[1];
 	dest[2] = v[2];
+}
+inline void rcVcopy(float* dest, const Vector3& v)
+{
+	dest[0] = v.x;
+	dest[1] = v.y;
+	dest[2] = v.z;
+}
+inline void rcVcopy(Vector3& dest, const float* v)
+{
+	dest.x = v[0];
+	dest.y = v[1];
+	dest.z = v[2];
+}
+inline void rcVcopy(Vector3& dest, const Vector3& v)
+{
+	dest.x = v.x;
+	dest.y = v.y;
+	dest.z = v.z;
+}
+inline void rcVcopy(Bounds& dest, const Bounds& v)
+{
+	rcVcopy(dest.bmin, v.bmin);
+	rcVcopy(dest.bmax, v.bmax);
+	dest.cs = v.cs;
+	dest.ch = v.ch;
 }
 
 /// Returns the distance between two points.

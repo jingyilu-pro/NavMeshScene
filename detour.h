@@ -1,9 +1,10 @@
-#ifndef __NMS_DETOUR_H__
+﻿#ifndef __NMS_DETOUR_H__
 #define __NMS_DETOUR_H__
 
 #include <cstdint>
 #include <unordered_map>
 #include <mutex>
+#include <string>
 
 class dtNavMesh;
 class dtNavMeshQuery;

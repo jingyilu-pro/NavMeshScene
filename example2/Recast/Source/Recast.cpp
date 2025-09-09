@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -96,10 +96,10 @@ void rcFreeHeightField(rcHeightfield* heightfield)
 rcHeightfield::rcHeightfield()
 : width()
 , height()
-, bmin()
-, bmax()
-, cs()
-, ch()
+//, bmin()
+//, bmax()
+//, cs()
+//, ch()
 , spans()
 , pools()
 , freelist()
@@ -138,10 +138,10 @@ rcCompactHeightfield::rcCompactHeightfield()
 , borderSize()
 , maxDistance()
 , maxRegions()
-, bmin()
-, bmax()
-, cs()
-, ch()
+//, bmin()
+//, bmax()
+//, cs()
+//, ch()
 , cells()
 , spans()
 , dist()
@@ -198,10 +198,10 @@ void rcFreeContourSet(rcContourSet* contourSet)
 rcContourSet::rcContourSet()
 : conts()
 , nconts()
-, bmin()
-, bmax()
-, cs()
-, ch()
+//, bmin()
+//, bmax()
+//, cs()
+//, ch()
 , width()
 , height()
 , borderSize()
@@ -239,10 +239,10 @@ rcPolyMesh::rcPolyMesh()
 , npolys()
 , maxpolys()
 , nvp()
-, bmin()
-, bmax()
-, cs()
-, ch()
+//, bmin()
+//, bmax()
+//, cs()
+//, ch()
 , borderSize()
 , maxEdgeError()
 {
@@ -311,10 +311,10 @@ bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int siz
 
 	heightfield.width = sizeX;
 	heightfield.height = sizeZ;
-	rcVcopy(heightfield.bmin, minBounds);
-	rcVcopy(heightfield.bmax, maxBounds);
-	heightfield.cs = cellSize;
-	heightfield.ch = cellHeight;
+	rcVcopy(heightfield.bounds.bmin, minBounds);
+	rcVcopy(heightfield.bounds.bmax, maxBounds);
+	heightfield.bounds.cs = cellSize;
+	heightfield.bounds.ch = cellHeight;
 	heightfield.spans = (rcSpan**)rcAlloc(sizeof(rcSpan*) * heightfield.width * heightfield.height, RC_ALLOC_PERM);
 	if (!heightfield.spans)
 	{
@@ -418,11 +418,11 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 	compactHeightfield.walkableHeight = walkableHeight;
 	compactHeightfield.walkableClimb = walkableClimb;
 	compactHeightfield.maxRegions = 0;
-	rcVcopy(compactHeightfield.bmin, heightfield.bmin);
-	rcVcopy(compactHeightfield.bmax, heightfield.bmax);
-	compactHeightfield.bmax[1] += walkableHeight * heightfield.ch;
-	compactHeightfield.cs = heightfield.cs;
-	compactHeightfield.ch = heightfield.ch;
+	rcVcopy(compactHeightfield.bounds.bmin, heightfield.bounds.bmin);
+	rcVcopy(compactHeightfield.bounds.bmax, heightfield.bounds.bmax);
+	compactHeightfield.bounds.bmax.y += walkableHeight * heightfield.bounds.ch;
+	compactHeightfield.bounds.cs = heightfield.bounds.cs;
+	compactHeightfield.bounds.ch = heightfield.bounds.ch;
 	compactHeightfield.cells = (rcCompactCell*)rcAlloc(sizeof(rcCompactCell) * xSize * zSize, RC_ALLOC_PERM);
 	if (!compactHeightfield.cells)
 	{
