@@ -960,7 +960,7 @@ bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int siz
 /// @param[in]		numTris				The number of triangles.
 /// @param[out]		triAreaIDs			The triangle area ids. [Length: >= @p nt]
 void rcMarkWalkableTriangles(rcContext* context, float walkableSlopeAngle, const std::vector<Vector3>& verts,
-							 const std::vector<Triangle>& tris, unsigned char* triAreaIDs); 
+							 const std::vector<Triangle>& tris, unsigned char* triAreaIDs, int minIdx = 0, int maxIdx = 0); 
 
 /// Sets the area id of all triangles with a slope greater than or equal to the specified value to #RC_NULL_AREA.
 /// 
@@ -1046,7 +1046,7 @@ bool rcRasterizeTriangle(rcContext* context,
 bool rcRasterizeTriangles(rcContext* context,
                           const std::vector<Vector3>& verts,
                           const std::vector<Triangle>& tris, const unsigned char* triAreaIDs,
-                          rcHeightfield& heightfield, int flagMergeThreshold = 1);
+                          rcHeightfield& heightfield, int flagMergeThreshold = 1, int minIdx = 0, int maxIdx = 0);
 
 /// Rasterizes an indexed triangle mesh into the specified heightfield.
 ///

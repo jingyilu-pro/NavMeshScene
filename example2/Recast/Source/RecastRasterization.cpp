@@ -496,17 +496,18 @@ bool rcRasterizeTriangle(rcContext* context,
 bool rcRasterizeTriangles(rcContext* context,
 						const std::vector<Vector3>& verts,
 						const std::vector<Triangle>& tris, const unsigned char* triAreaIDs,
-						rcHeightfield& heightfield, int flagMergeThreshold)
+						rcHeightfield& heightfield, int flagMergeThreshold, int minIdx/* = 0*/, int maxIdx/* = 0 */)
 {
 	rcAssert(context != NULL);
 
 	rcScopedTimer timer(context, RC_TIMER_RASTERIZE_TRIANGLES);
 	
 	// Rasterize the triangles.
+	if (maxIdx == 0) maxIdx = (int)tris.size();
 	auto& bounds = heightfield.bounds;
 	const float inverseCellSize = 1.0f / bounds.cs;
 	const float inverseCellHeight = 1.0f / bounds.ch;
-	for (int triIndex = 0; triIndex < tris.size(); ++triIndex)
+	for (int triIndex = minIdx; triIndex < maxIdx; ++triIndex)
 	{
 		const auto& tri = tris[triIndex];
 		if (!rasterizeTri(verts[tri.v0], verts[tri.v1], verts[tri.v2], triAreaIDs[triIndex], heightfield, bounds.bmin, bounds.bmax, bounds.cs, inverseCellSize, inverseCellHeight, flagMergeThreshold))

@@ -425,9 +425,9 @@ int Sample_TempObstacles::rasterizeTileLayers(
 
         memset(rc.triareas, 0, tris.size() * sizeof(unsigned char));
         rcMarkWalkableTriangles(m_ctx, tcfg.walkableSlopeAngle,
-            verts, tris, rc.triareas);
+            verts, tris, rc.triareas, node.i, node.n);
 
-        if (!rcRasterizeTriangles(m_ctx, verts, tris, rc.triareas, *rc.solid, tcfg.walkableClimb))
+        if (!rcRasterizeTriangles(m_ctx, verts, tris, rc.triareas, *rc.solid, tcfg.walkableClimb, node.i, node.n))
             return 0;
     }
 

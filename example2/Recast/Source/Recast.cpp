@@ -360,20 +360,22 @@ static void calcTriNormal(const Vector3& v0, const Vector3& v1, const Vector3& v
 }
 
 void rcMarkWalkableTriangles(rcContext* context, float walkableSlopeAngle, const std::vector<Vector3>& verts,
-	const std::vector<Triangle>& tris, unsigned char* triAreaIDs)
+	const std::vector<Triangle>& tris, unsigned char* triAreaIDs, int minIdx/* = 0*/, int maxIdx/* = 0 */ )
 {
 	rcIgnoreUnused(context);
 
 	const float walkableThr = cosf(walkableSlopeAngle / 180.0f * RC_PI);
 
+	if (maxIdx == 0) maxIdx = (int)tris.size();
+
 	Vector3 normal;
-	for (auto i = 0; i < tris.size(); ++i)
+	for (auto i = minIdx; i < maxIdx; ++i)
 	{
 		const auto& tri = tris[i];
 		calcTriNormal(verts[tri.v0], verts[tri.v1], verts[tri.v2], normal);
 
 		// Check if the face is walkable.
-		if (normal.x > walkableThr)
+		if (normal.y > walkableThr)
 		{
 			triAreaIDs[i] = RC_WALKABLE_AREA;
 		}
