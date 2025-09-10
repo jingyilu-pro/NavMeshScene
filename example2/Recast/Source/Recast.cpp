@@ -296,12 +296,29 @@ void rcCalcBounds(const float* verts, int numVerts, float* minBounds, float* max
 		rcVmax(maxBounds, v);
 	}
 }
+void rcCalcBounds(const std::vector<Vector3>& verts, Vector3& minBounds, Vector3& maxBounds)
+{
+	// Calculate bounding box.
+	rcVcopy(minBounds, verts[0]);
+	rcVcopy(maxBounds, verts[0]);
+	for (const auto& v : verts)
+	{
+		rcVmin(minBounds, v);
+		rcVmax(maxBounds, v);
+	}
+}
 
 void rcCalcGridSize(const float* minBounds, const float* maxBounds, const float cellSize, int* sizeX, int* sizeZ)
 {
 	*sizeX = (int)((maxBounds[0] - minBounds[0]) / cellSize + 0.5f);
 	*sizeZ = (int)((maxBounds[2] - minBounds[2]) / cellSize + 0.5f);
 }
+void rcCalcGridSize(const Vector3& minBounds, const Vector3& maxBounds, const float cellSize, int* sizeX, int* sizeZ)
+{
+	*sizeX = (int)((maxBounds.x - minBounds.x) / cellSize + 0.5f);
+	*sizeZ = (int)((maxBounds.y - minBounds.y) / cellSize + 0.5f);
+}
+
 
 bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int sizeX, int sizeZ,
                          const float* minBounds, const float* maxBounds,
@@ -333,28 +350,46 @@ static void calcTriNormal(const float* v0, const float* v1, const float* v2, flo
 	rcVnormalize(faceNormal);
 }
 
-void rcMarkWalkableTriangles(rcContext* context, const float walkableSlopeAngle,
-                             const float* verts, const int numVerts,
-                             const int* tris, const int numTris,
-                             unsigned char* triAreaIDs)
+static void calcTriNormal(const Vector3& v0, const Vector3& v1, const Vector3& v2, Vector3& faceNormal)
+{
+	Vector3 e0, e1;
+	rcVsub(e0, v1, v0);
+	rcVsub(e1, v2, v0);
+	rcVcross(faceNormal, e0, e1);
+	rcVnormalize(faceNormal);
+}
+
+void rcMarkWalkableTriangles(rcContext* context, float walkableSlopeAngle, const std::vector<Vector3>& verts,
+	const std::vector<Triangle>& tris, unsigned char* triAreaIDs)
 {
 	rcIgnoreUnused(context);
-	rcIgnoreUnused(numVerts);
 
 	const float walkableThr = cosf(walkableSlopeAngle / 180.0f * RC_PI);
 
-	float norm[3];
-
-	for (int i = 0; i < numTris; ++i)
+	Vector3 normal;
+	for (auto i = 0; i < tris.size(); ++i)
 	{
-		const int* tri = &tris[i * 3];
-		calcTriNormal(&verts[tri[0] * 3], &verts[tri[1] * 3], &verts[tri[2] * 3], norm);
+		const auto& tri = tris[i];
+		calcTriNormal(verts[tri.v0], verts[tri.v1], verts[tri.v2], normal);
+
 		// Check if the face is walkable.
-		if (norm[1] > walkableThr)
+		if (normal.x > walkableThr)
 		{
 			triAreaIDs[i] = RC_WALKABLE_AREA;
 		}
 	}
+
+	//float norm[3];
+	//for (int i = 0; i < numTris; ++i)
+	//{
+	//	const int* tri = &tris[i * 3];
+	//	calcTriNormal(&verts[tri[0] * 3], &verts[tri[1] * 3], &verts[tri[2] * 3], norm);
+	//	// Check if the face is walkable.
+	//	if (norm[1] > walkableThr)
+	//	{
+	//		triAreaIDs[i] = RC_WALKABLE_AREA;
+	//	}
+	//}
 }
 
 void rcClearUnwalkableTriangles(rcContext* context, const float walkableSlopeAngle,

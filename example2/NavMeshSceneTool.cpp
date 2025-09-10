@@ -1,4 +1,4 @@
-#include "NavMeshSceneTool.h"
+﻿#include "NavMeshSceneTool.h"
 #include "imgui.h"
 #include <iostream>
 #include <DetourTileCache.h>
@@ -53,7 +53,7 @@ void NavMeshSceneTool::doInit() {
         mScene->AddAgent(i + 1, agent);
         agent->RandomPosition();
 
-        // 3/4 agent�ƶ�
+        // 3/4 agent移动
         if (rand() % 4 <= 2) {
             agent->changeDir();
         }

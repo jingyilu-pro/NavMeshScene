@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -161,8 +161,8 @@ int main(int /*argc*/, char** /*argv*/)
     float scrollZoom = 0;
     bool rotate = false;
     bool movedDuringRotate = false;
-    float rayStart[3];
-    float rayEnd[3];
+    Vector3 rayStart;
+    Vector3 rayEnd;
     bool mouseOverMenu = false;
 
     bool showMenu = !presentationMode;
@@ -181,7 +181,7 @@ int main(int /*argc*/, char** /*argv*/)
 
     vector<string> files;
 
-    float markerPosition[3] = { 0, 0, 0 };
+    Vector3 markerPosition;
     bool markerPositionSet = false;
 
     InputGeom* geom = 0;
@@ -368,6 +368,8 @@ int main(int /*argc*/, char** /*argv*/)
         // Hit test mesh.
         if (processHitTest && geom && sample)
         {
+            //Vector3 rayS{ rayStart[0], rayStart[1], rayStart[2] };
+            //Vector3 rayE{ rayEnd[0], rayEnd[1], rayEnd[2] };
             float hitTime;
             bool hit = geom->raycastMesh(rayStart, rayEnd, hitTime);
 
@@ -377,17 +379,27 @@ int main(int /*argc*/, char** /*argv*/)
                 {
                     // Marker
                     markerPositionSet = true;
-                    markerPosition[0] = rayStart[0] + (rayEnd[0] - rayStart[0]) * hitTime;
-                    markerPosition[1] = rayStart[1] + (rayEnd[1] - rayStart[1]) * hitTime;
-                    markerPosition[2] = rayStart[2] + (rayEnd[2] - rayStart[2]) * hitTime;
+                    markerPosition.x = rayStart.x + (rayEnd.x - rayStart.x) * hitTime;
+                    markerPosition.y = rayStart.y + (rayEnd.y - rayStart.y) * hitTime;
+                    markerPosition.z = rayStart.z + (rayEnd.z - rayStart.z) * hitTime;
                 }
                 else
                 {
+                    float startPos[3];
+                    startPos[0] = rayStart.x;
+                    startPos[1] = rayStart.y;
+                    startPos[2] = rayStart.z;
+
                     float pos[3];
-                    pos[0] = rayStart[0] + (rayEnd[0] - rayStart[0]) * hitTime;
-                    pos[1] = rayStart[1] + (rayEnd[1] - rayStart[1]) * hitTime;
-                    pos[2] = rayStart[2] + (rayEnd[2] - rayStart[2]) * hitTime;
-                    sample->handleClick(rayStart, pos, processHitTestShift);
+                    //pos[0] = rayStart[0] + (rayEnd[0] - rayStart[0]) * hitTime;
+                    //pos[1] = rayStart[1] + (rayEnd[1] - rayStart[1]) * hitTime;
+                    //pos[2] = rayStart[2] + (rayEnd[2] - rayStart[2]) * hitTime;
+
+                    pos[0] = rayStart.x + (rayEnd.x - rayStart.x) * hitTime;
+                    pos[1] = rayStart.y + (rayEnd.y - rayStart.y) * hitTime;
+                    pos[2] = rayStart.z + (rayEnd.z - rayStart.z) * hitTime;
+
+                    sample->handleClick(startPos, pos, processHitTestShift);
                 }
             }
             else
@@ -456,13 +468,13 @@ int main(int /*argc*/, char** /*argv*/)
         // Get hit ray position and direction.
         GLdouble x, y, z;
         gluUnProject(mousePos[0], mousePos[1], 0.0f, modelviewMatrix, projectionMatrix, viewport, &x, &y, &z);
-        rayStart[0] = (float)x;
-        rayStart[1] = (float)y;
-        rayStart[2] = (float)z;
+        rayStart.x = (float)x;
+        rayStart.y = (float)y;
+        rayStart.z = (float)z;
         gluUnProject(mousePos[0], mousePos[1], 1.0f, modelviewMatrix, projectionMatrix, viewport, &x, &y, &z);
-        rayEnd[0] = (float)x;
-        rayEnd[1] = (float)y;
-        rayEnd[2] = (float)z;
+        rayEnd.x = (float)x;
+        rayEnd.y = (float)y;
+        rayEnd.z = (float)z;
 
         // Handle keyboard movement.
         const Uint8* keystate = SDL_GetKeyboardState(NULL);
@@ -651,22 +663,22 @@ int main(int /*argc*/, char** /*argv*/)
 
             if (geom || sample)
             {
-                const float* bmin = 0;
-                const float* bmax = 0;
+                const Vector3* bmin = nullptr;
+                const Vector3* bmax = nullptr;
                 if (geom)
                 {
-                    bmin = geom->getNavMeshBoundsMin();
-                    bmax = geom->getNavMeshBoundsMax();
+                    bmin = &geom->getNavMeshBoundsMin();
+                    bmax = &geom->getNavMeshBoundsMax();
                 }
                 // Reset camera and fog to match the mesh bounds.
                 if (bmin && bmax)
                 {
-                    camr = sqrtf(rcSqr(bmax[0] - bmin[0]) +
-                        rcSqr(bmax[1] - bmin[1]) +
-                        rcSqr(bmax[2] - bmin[2])) / 2;
-                    cameraPos[0] = (bmax[0] + bmin[0]) / 2 + camr;
-                    cameraPos[1] = (bmax[1] + bmin[1]) / 2 + camr;
-                    cameraPos[2] = (bmax[2] + bmin[2]) / 2 + camr;
+                    camr = sqrtf(rcSqr(bmax->x - bmin->x) +
+                        rcSqr(bmax->y - bmin->y) +
+                        rcSqr(bmax->z - bmin->z)) / 2;
+                    cameraPos[0] = (bmax->x + bmin->x) / 2 + camr;
+                    cameraPos[1] = (bmax->y + bmin->y) / 2 + camr;
+                    cameraPos[2] = (bmax->z + bmin->z) / 2 + camr;
                     camr *= 3;
                 }
                 cameraEulers[0] = 45;
@@ -730,22 +742,40 @@ int main(int /*argc*/, char** /*argv*/)
 
                 if (geom || sample)
                 {
-                    const float* bmin = 0;
-                    const float* bmax = 0;
+                    //const float* bmin = 0;
+                    //const float* bmax = 0;
+                    //if (geom)
+                    //{
+                    //    bmin = geom->getNavMeshBoundsMin();
+                    //    bmax = geom->getNavMeshBoundsMax();
+                    //}
+                    //// Reset camera and fog to match the mesh bounds.
+                    //if (bmin && bmax)
+                    //{
+                    //    camr = sqrtf(rcSqr(bmax[0] - bmin[0]) +
+                    //        rcSqr(bmax[1] - bmin[1]) +
+                    //        rcSqr(bmax[2] - bmin[2])) / 2;
+                    //    cameraPos[0] = (bmax[0] + bmin[0]) / 2 + camr;
+                    //    cameraPos[1] = (bmax[1] + bmin[1]) / 2 + camr;
+                    //    cameraPos[2] = (bmax[2] + bmin[2]) / 2 + camr;
+                    //    camr *= 3;
+                    //}
+                    const Vector3* bmin = 0;
+                    const Vector3* bmax = 0;
                     if (geom)
                     {
-                        bmin = geom->getNavMeshBoundsMin();
-                        bmax = geom->getNavMeshBoundsMax();
+                        bmin = &geom->getNavMeshBoundsMin();
+                        bmax = &geom->getNavMeshBoundsMax();
                     }
                     // Reset camera and fog to match the mesh bounds.
                     if (bmin && bmax)
                     {
-                        camr = sqrtf(rcSqr(bmax[0] - bmin[0]) +
-                            rcSqr(bmax[1] - bmin[1]) +
-                            rcSqr(bmax[2] - bmin[2])) / 2;
-                        cameraPos[0] = (bmax[0] + bmin[0]) / 2 + camr;
-                        cameraPos[1] = (bmax[1] + bmin[1]) / 2 + camr;
-                        cameraPos[2] = (bmax[2] + bmin[2]) / 2 + camr;
+                        camr = sqrtf(rcSqr(bmax->x - bmin->x) +
+                            rcSqr(bmax->y - bmin->y) +
+                            rcSqr(bmax->z - bmin->z)) / 2;
+                        cameraPos[0] = (bmax->x + bmin->x) / 2 + camr;
+                        cameraPos[1] = (bmax->y + bmin->y) / 2 + camr;
+                        cameraPos[2] = (bmax->y + bmin->y) / 2 + camr;
                         camr *= 3;
                     }
                     cameraEulers[0] = 45;
@@ -846,22 +876,22 @@ int main(int /*argc*/, char** /*argv*/)
 
                     if (geom || sample)
                     {
-                        const float* bmin = 0;
-                        const float* bmax = 0;
+                        const Vector3* bmin = 0;
+                        const Vector3* bmax = 0;
                         if (geom)
                         {
-                            bmin = geom->getNavMeshBoundsMin();
-                            bmax = geom->getNavMeshBoundsMax();
+                            bmin = &geom->getNavMeshBoundsMin();
+                            bmax = &geom->getNavMeshBoundsMax();
                         }
                         // Reset camera and fog to match the mesh bounds.
                         if (bmin && bmax)
                         {
-                            camr = sqrtf(rcSqr(bmax[0] - bmin[0]) +
-                                rcSqr(bmax[1] - bmin[1]) +
-                                rcSqr(bmax[2] - bmin[2])) / 2;
-                            cameraPos[0] = (bmax[0] + bmin[0]) / 2 + camr;
-                            cameraPos[1] = (bmax[1] + bmin[1]) / 2 + camr;
-                            cameraPos[2] = (bmax[2] + bmin[2]) / 2 + camr;
+                            camr = sqrtf(rcSqr(bmax->x - bmin->x) +
+                                rcSqr(bmax->y - bmin->y) +
+                                rcSqr(bmax->z - bmin->z)) / 2;
+                            cameraPos[0] = (bmax->x + bmin->x) / 2 + camr;
+                            cameraPos[1] = (bmax->y + bmin->y) / 2 + camr;
+                            cameraPos[2] = (bmax->y + bmin->y) / 2 + camr;
                             camr *= 3;
                         }
                         cameraEulers[0] = 45;
@@ -903,7 +933,7 @@ int main(int /*argc*/, char** /*argv*/)
         }
 
         // Marker
-        if (markerPositionSet && gluProject((GLdouble)markerPosition[0], (GLdouble)markerPosition[1], (GLdouble)markerPosition[2],
+        if (markerPositionSet && gluProject((GLdouble)markerPosition.x, (GLdouble)markerPosition.y, (GLdouble)markerPosition.z,
             modelviewMatrix, projectionMatrix, viewport, &x, &y, &z))
         {
             // Draw marker circle

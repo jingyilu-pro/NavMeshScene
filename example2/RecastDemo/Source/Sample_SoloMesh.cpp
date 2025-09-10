@@ -253,8 +253,8 @@ void Sample_SoloMesh::handleRender()
     if (m_drawMode != DRAWMODE_NAVMESH_TRANS)
     {
         // Draw mesh
-        duDebugDrawTriMeshSlope(&m_dd, m_geom->getMesh()->getVerts(), m_geom->getMesh()->getVertCount(),
-            m_geom->getMesh()->getTris(), m_geom->getMesh()->getNormals(), m_geom->getMesh()->getTriCount(),
+        duDebugDrawTriMeshSlope(&m_dd, m_geom->getMesh()->getVerts(),
+            m_geom->getMesh()->getTris(), m_geom->getMesh()->getNormals(),
             m_agentMaxSlope, texScale);
         m_geom->drawOffMeshConnections(&m_dd);
     }
@@ -263,11 +263,11 @@ void Sample_SoloMesh::handleRender()
     glDepthMask(GL_FALSE);
 
     // Draw bounds
-    const float* bmin = m_geom->getNavMeshBoundsMin();
-    const float* bmax = m_geom->getNavMeshBoundsMax();
-    duDebugDrawBoxWire(&m_dd, bmin[0], bmin[1], bmin[2], bmax[0], bmax[1], bmax[2], duRGBA(255, 255, 255, 128), 1.0f);
+    const auto& bmin = m_geom->getNavMeshBoundsMin();
+    const auto& bmax = m_geom->getNavMeshBoundsMax();
+    duDebugDrawBoxWire(&m_dd, bmin.x, bmin.y, bmin.z, bmax.x, bmax.y, bmax.z, duRGBA(255, 255, 255, 128), 1.0f);
     m_dd.begin(DU_DRAW_POINTS, 5.0f);
-    m_dd.vertex(bmin[0], bmin[1], bmin[2], duRGBA(255, 255, 255, 128));
+    m_dd.vertex(bmin.x, bmin.y, bmin.z, duRGBA(255, 255, 255, 128));
     m_dd.end();
 
     if (m_navMesh && m_navQuery &&
@@ -392,12 +392,10 @@ bool Sample_SoloMesh::handleBuild()
 
     cleanup();
 
-    const float* bmin = m_geom->getNavMeshBoundsMin();
-    const float* bmax = m_geom->getNavMeshBoundsMax();
-    const float* verts = m_geom->getMesh()->getVerts();
-    const int nverts = m_geom->getMesh()->getVertCount();
-    const int* tris = m_geom->getMesh()->getTris();
-    const int ntris = m_geom->getMesh()->getTriCount();
+    const auto& bmin = m_geom->getNavMeshBoundsMin();
+    const auto& bmax = m_geom->getNavMeshBoundsMax();
+    const auto& verts = m_geom->getMesh()->getVerts();
+    const auto& tris = m_geom->getMesh()->getTris();
 
     //
     // Step 1. Initialize build config.
@@ -434,7 +432,7 @@ bool Sample_SoloMesh::handleBuild()
 
     m_ctx->log(RC_LOG_PROGRESS, "Building navigation:");
     m_ctx->log(RC_LOG_PROGRESS, " - %d x %d cells", m_cfg.width, m_cfg.height);
-    m_ctx->log(RC_LOG_PROGRESS, " - %.1fK verts, %.1fK tris", nverts / 1000.0f, ntris / 1000.0f);
+    m_ctx->log(RC_LOG_PROGRESS, " - %.1fK verts, %.1fK tris", verts.size() / 1000.0f, tris.size() / 1000.0f);
 
     //
     // Step 2. Rasterize input polygon soup.
@@ -456,19 +454,19 @@ bool Sample_SoloMesh::handleBuild()
     // Allocate array that can hold triangle area types.
     // If you have multiple meshes you need to process, allocate
     // and array which can hold the max number of triangles you need to process.
-    m_triareas = new unsigned char[ntris];
+    m_triareas = new unsigned char[tris.size()];
     if (!m_triareas)
     {
-        m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'm_triareas' (%d).", ntris);
+        m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'm_triareas' (%d).", tris.size());
         return false;
     }
 
     // Find triangles which are walkable based on their slope and rasterize them.
     // If your input data is multiple meshes, you can transform them here, calculate
     // the are type for each of the meshes and rasterize them.
-    memset(m_triareas, 0, ntris * sizeof(unsigned char));
-    rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, nverts, tris, ntris, m_triareas);
-    if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, m_triareas, ntris, *m_solid, m_cfg.walkableClimb))
+    memset(m_triareas, 0, tris.size() * sizeof(unsigned char));
+    rcMarkWalkableTriangles(m_ctx, m_cfg.walkableSlopeAngle, verts, tris, m_triareas);
+    if (!rcRasterizeTriangles(m_ctx, verts, tris, m_triareas, *m_solid, m_cfg.walkableClimb))
     {
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
         return false;

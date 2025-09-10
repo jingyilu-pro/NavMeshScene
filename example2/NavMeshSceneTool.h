@@ -1,4 +1,4 @@
-#ifndef __MYNAVMESHSCENE_H__
+﻿#ifndef __MYNAVMESHSCENE_H__
 #define __MYNAVMESHSCENE_H__
 
 #include "Sample.h"

@@ -97,6 +97,78 @@ static bool isectSegAABB(const float* sp, const float* sq,
     return true;
 }
 
+
+static bool isectSegAABB(
+    const Vector3& sp, const Vector3& sq,
+    const Vector3& amin, const Vector3& amax,
+    float& tmin, float& tmax)
+{
+    static const float EPS = 1e-6f;
+
+    Vector3 d;
+    d.x = sq.x - sp.x;
+    d.y = sq.y - sp.y;
+    d.z = sq.z - sp.z;
+
+    tmin = 0.0;
+    tmax = 1.0f;
+
+    // x
+    if (fabsf(d.x) < EPS)
+    {
+        if (sp.x < amin.x || sp.x > amax.x)
+            return false;
+    }
+    else
+    {
+        const float ood = 1.0f / d.x;
+        float t1 = (amin.x - sp.x) * ood;
+        float t2 = (amax.x - sp.x) * ood;
+        if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+        if (t1 > tmin) tmin = t1;
+        if (t2 < tmax) tmax = t2;
+        if (tmin > tmax) return false;
+    }
+
+    // y
+    if (fabsf(d.y) < EPS)
+    {
+        if (sp.y < amin.y || sp.y > amax.y)
+            return false;
+    }
+    else
+    {
+        const float ood = 1.0f / d.y;
+        float t1 = (amin.y - sp.y) * ood;
+        float t2 = (amax.y - sp.y) * ood;
+        if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+        if (t1 > tmin) tmin = t1;
+        if (t2 < tmax) tmax = t2;
+        if (tmin > tmax) return false;
+    }
+
+    // z
+    if (fabsf(d.z) < EPS)
+    {
+        if (sp.z < amin.z || sp.z > amax.z)
+            return false;
+    }
+    else
+    {
+        const float ood = 1.0f / d.z;
+        float t1 = (amin.z - sp.z) * ood;
+        float t2 = (amax.z - sp.z) * ood;
+        if (t1 > t2) { float tmp = t1; t1 = t2; t2 = tmp; }
+        if (t1 > tmin) tmin = t1;
+        if (t2 < tmax) tmax = t2;
+        if (tmin > tmax) return false;
+    }
+
+    return true;
+}
+
+
+
 static int calcLayerBufferSize(const int gridWidth, const int gridHeight)
 {
     const int headerSize = dtAlign4(sizeof(dtTileCacheLayerHeader));
@@ -287,8 +359,8 @@ int Sample_TempObstacles::rasterizeTileLayers(
     FastLZCompressor comp;
     RasterizationContext rc;
 
-    const float* verts = m_geom->getMesh()->getVerts();
-    const int nverts = m_geom->getMesh()->getVertCount();
+    const auto& verts = m_geom->getMesh()->getVerts();
+    //const int nverts = m_geom->getMesh()->getVertCount();
     const rcChunkyTriMesh* chunkyMesh = m_geom->getChunkyMesh();
 
     // Tile bounds.
@@ -331,11 +403,14 @@ int Sample_TempObstacles::rasterizeTileLayers(
         return 0;
     }
 
-    float tbmin[2], tbmax[2];
-    tbmin[0] = tcfg.bmin[0];
-    tbmin[1] = tcfg.bmin[2];
-    tbmax[0] = tcfg.bmax[0];
-    tbmax[1] = tcfg.bmax[2];
+    //float tbmin[2], tbmax[2];
+    //tbmin[0] = tcfg.bmin[0];
+    //tbmin[1] = tcfg.bmin[2];
+    //tbmax[0] = tcfg.bmax[0];
+    //tbmax[1] = tcfg.bmax[2];
+    Vector2 tbmin{ tcfg.bmin[0], tcfg.bmin[2] };
+    Vector2 tbmax{ tcfg.bmax[0], tcfg.bmax[2] };
+
     int cid[512];// TODO: Make grow when returning too many items.
     const int ncid = rcGetChunksOverlappingRect(chunkyMesh, tbmin, tbmax, cid, 512);
     if (!ncid)
@@ -346,14 +421,13 @@ int Sample_TempObstacles::rasterizeTileLayers(
     for (int i = 0; i < ncid; ++i)
     {
         const rcChunkyTriMeshNode& node = chunkyMesh->nodes[cid[i]];
-        const int* tris = &chunkyMesh->tris[node.i * 3];
-        const int ntris = node.n;
+        const auto& tris = chunkyMesh->tris;
 
-        memset(rc.triareas, 0, ntris * sizeof(unsigned char));
+        memset(rc.triareas, 0, tris.size() * sizeof(unsigned char));
         rcMarkWalkableTriangles(m_ctx, tcfg.walkableSlopeAngle,
-            verts, nverts, tris, ntris, rc.triareas);
+            verts, tris, rc.triareas);
 
-        if (!rcRasterizeTriangles(m_ctx, verts, nverts, tris, rc.triareas, ntris, *rc.solid, tcfg.walkableClimb))
+        if (!rcRasterizeTriangles(m_ctx, verts, tris, rc.triareas, *rc.solid, tcfg.walkableClimb))
             return 0;
     }
 
@@ -644,6 +718,39 @@ dtObstacleRef hitTestObstacle(const dtTileCache* tc, const float* sp, const floa
     return tc->getObstacleRef(obmin);
 }
 
+dtObstacleRef hitTestObstacle(const dtTileCache* tc, const Vector3& sp, const Vector3& sq)
+{
+    float tmin = FLT_MAX;
+    const dtTileCacheObstacle* obmin = 0;
+    for (int i = 0; i < tc->getObstacleCount(); ++i)
+    {
+        const dtTileCacheObstacle* ob = tc->getObstacle(i);
+        if (ob->state == DT_OBSTACLE_EMPTY)
+            continue;
+
+        float bmin[3], bmax[3], t0, t1;
+        tc->getObstacleBounds(ob, bmin, bmax);
+
+        Vector3 vmin, vmax;
+        vmin.x = bmin[0];
+        vmin.y = bmin[1];
+        vmin.z = bmin[2];
+        vmax.x = bmax[0];
+        vmax.y = bmax[1];
+        vmax.z = bmax[2];
+
+        if (isectSegAABB(sp, sq, vmin, vmax, t0, t1))
+        {
+            if (t0 < tmin)
+            {
+                tmin = t0;
+                obmin = ob;
+            }
+        }
+    }
+    return tc->getObstacleRef(obmin);
+}
+
 void drawObstacles(duDebugDraw* dd, const dtTileCache* tc)
 {
     // Draw obstacles
@@ -868,8 +975,8 @@ void Sample_TempObstacles::handleSettings()
     int gridSize = 1;
     if (m_geom)
     {
-        const float* bmin = m_geom->getNavMeshBoundsMin();
-        const float* bmax = m_geom->getNavMeshBoundsMax();
+        const Vector3& bmin = m_geom->getNavMeshBoundsMin();
+        const Vector3& bmax = m_geom->getNavMeshBoundsMax();
         char text[64];
         int gw = 0, gh = 0;
         rcCalcGridSize(bmin, bmax, m_cellSize, &gw, &gh);
@@ -1045,8 +1152,8 @@ void Sample_TempObstacles::handleRender()
     if (m_drawMode != DRAWMODE_NAVMESH_TRANS)
     {
         // Draw mesh
-        duDebugDrawTriMeshSlope(&m_dd, m_geom->getMesh()->getVerts(), m_geom->getMesh()->getVertCount(),
-            m_geom->getMesh()->getTris(), m_geom->getMesh()->getNormals(), m_geom->getMesh()->getTriCount(),
+        duDebugDrawTriMeshSlope(&m_dd, m_geom->getMesh()->getVerts(),
+            m_geom->getMesh()->getTris(), m_geom->getMesh()->getNormals(),
             m_agentMaxSlope, texScale);
         m_geom->drawOffMeshConnections(&m_dd);
     }
@@ -1061,9 +1168,9 @@ void Sample_TempObstacles::handleRender()
     glDepthMask(GL_FALSE);
 
     // Draw bounds
-    const float* bmin = m_geom->getNavMeshBoundsMin();
-    const float* bmax = m_geom->getNavMeshBoundsMax();
-    duDebugDrawBoxWire(&m_dd, bmin[0], bmin[1], bmin[2], bmax[0], bmax[1], bmax[2], duRGBA(255, 255, 255, 128), 1.0f);
+    const auto& bmin = m_geom->getNavMeshBoundsMin();
+    const auto& bmax = m_geom->getNavMeshBoundsMax();
+    duDebugDrawBoxWire(&m_dd, bmin.x, bmin.y, bmin.z, bmax.x, bmax.y, bmax.z, duRGBA(255, 255, 255, 128), 1.0f);
 
     // Tiling grid.
     int gw = 0, gh = 0;
@@ -1071,7 +1178,7 @@ void Sample_TempObstacles::handleRender()
     const int tw = (gw + (int)m_tileSize - 1) / (int)m_tileSize;
     const int th = (gh + (int)m_tileSize - 1) / (int)m_tileSize;
     const float s = m_tileSize*m_cellSize;
-    duDebugDrawGridXZ(&m_dd, bmin[0], bmin[1], bmin[2], tw, th, s, duRGBA(0, 0, 0, 64), 1.0f);
+    duDebugDrawGridXZ(&m_dd, bmin.x, bmin.y, bmin.z, tw, th, s, duRGBA(0, 0, 0, 64), 1.0f);
 
     if (m_navMesh && m_navQuery &&
         (m_drawMode == DRAWMODE_NAVMESH ||
@@ -1211,8 +1318,8 @@ bool Sample_TempObstacles::handleBuild()
     m_tmproc->init(m_geom);
 
     // Init cache
-    const float* bmin = m_geom->getNavMeshBoundsMin();
-    const float* bmax = m_geom->getNavMeshBoundsMax();
+    const auto& bmin = m_geom->getNavMeshBoundsMin();
+    const auto& bmax = m_geom->getNavMeshBoundsMax();
     int gw = 0, gh = 0;
     rcCalcGridSize(bmin, bmax, m_cellSize, &gw, &gh);
     const int ts = (int)m_tileSize;
@@ -1383,11 +1490,11 @@ void Sample_TempObstacles::getTilePos(const float* pos, int& tx, int& ty)
 {
     if (!m_geom) return;
 
-    const float* bmin = m_geom->getNavMeshBoundsMin();
+    const auto& bmin = m_geom->getNavMeshBoundsMin();
 
     const float ts = m_tileSize*m_cellSize;
-    tx = (int)((pos[0] - bmin[0]) / ts);
-    ty = (int)((pos[2] - bmin[2]) / ts);
+    tx = (int)((pos[0] - bmin.x) / ts);
+    ty = (int)((pos[2] - bmin.z) / ts);
 }
 
 static const int32_t TILECACHESET_MAGIC = 'T' << 24 | 'S' << 16 | 'A' << 8 | 'T'; //'TSET';
@@ -1431,14 +1538,14 @@ void Sample_TempObstacles::saveAll(const char* path)
     header.magic = TILECACHESET_MAGIC;
     header.version = TILECACHESET_VERSION;
 
-    const float* bmin = m_geom->getMeshBoundsMin();
-    const float* bmax = m_geom->getMeshBoundsMax();
-    header.boundsMinX = bmin[0];
-    header.boundsMinY = bmin[1];
-    header.boundsMinZ = bmin[2];
-    header.boundsMaxX = bmax[0];
-    header.boundsMaxY = bmax[1];
-    header.boundsMaxZ = bmax[2];
+    const auto& bmin = m_geom->getMeshBoundsMin();
+    const auto& bmax = m_geom->getMeshBoundsMax();
+    header.boundsMinX = bmin.x;
+    header.boundsMinY = bmin.y;
+    header.boundsMinZ = bmin.z;
+    header.boundsMaxX = bmax.x;
+    header.boundsMaxY = bmax.y;
+    header.boundsMaxZ = bmax.z;
 
     header.numTiles = 0;
     for (int i = 0; i < m_tileCache->getTileCount(); ++i)

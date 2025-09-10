@@ -21,114 +21,225 @@
 #include "RecastDebugDraw.h"
 #include "Recast.h"
 
-void duDebugDrawTriMesh(duDebugDraw* dd, const float* verts, int /*nverts*/,
-						const int* tris, const float* normals, int ntris,
-						const unsigned char* flags, const float texScale)
+static float duGetXYZByIndex(const Vector3& v, int idx)
+{
+	switch (idx)
+	{
+	case 1:
+		return v.y;
+	case 2:
+		return v.z;
+	}
+
+	return v.x;
+}
+
+void duDebugDrawTriMesh(struct duDebugDraw* dd, const std::vector<Vector3>& verts, const std::vector<Triangle>& tris, const std::vector<Vector3>& normals, const unsigned char* flags, const float texScale)
+//void duDebugDrawTriMesh(duDebugDraw* dd, const float* verts, int /*nverts*/,
+//						const int* tris, const float* normals, int ntris,
+//						const unsigned char* flags, const float texScale)
 {
 	if (!dd) return;
-	if (!verts) return;
-	if (!tris) return;
-	if (!normals) return;
+	//if (!verts) return;
+	//if (!tris) return;
+	//if (!normals) return;
 
-	float uva[2];
-	float uvb[2];
-	float uvc[2];
+	Vector2 uva, uvb, uvc;
 
 	const unsigned int unwalkable = duRGBA(192,128,0,255);
 
 	dd->texture(true);
 
 	dd->begin(DU_DRAW_TRIS);
-	for (int i = 0; i < ntris*3; i += 3)
+
+	for (int i = 0; i < tris.size(); ++i)
 	{
-		const float* norm = &normals[i];
+		const auto& tri = tris[i];
+		const auto& norm = normals[i];
 		unsigned int color;
-		unsigned char a = (unsigned char)(220*(2+norm[0]+norm[1])/4);
-		if (flags && !flags[i/3])
-			color = duLerpCol(duRGBA(a,a,a,255), unwalkable, 64);
+		unsigned char a = (unsigned char)(220 * (2 + norm.x + norm.y) / 4);
+		if (flags && !flags[i / 3])
+			color = duLerpCol(duRGBA(a, a, a, 255), unwalkable, 64);
 		else
-			color = duRGBA(a,a,a,255);
+			color = duRGBA(a, a, a, 255);
 
-		const float* va = &verts[tris[i+0]*3];
-		const float* vb = &verts[tris[i+1]*3];
-		const float* vc = &verts[tris[i+2]*3];
-		
+
+		const auto& va = verts[tri.v0];
+		const auto& vb = verts[tri.v1];
+		const auto& vc = verts[tri.v2];
+		//const float* va = &verts[tris[i + 0] * 3];
+		//const float* vb = &verts[tris[i + 1] * 3];
+		//const float* vc = &verts[tris[i + 2] * 3];
+
 		int ax = 0, ay = 0;
-		if (rcAbs(norm[1]) > rcAbs(norm[ax]))
+		if (rcAbs(norm.y) > rcAbs(norm.x))
+		{
 			ax = 1;
-		if (rcAbs(norm[2]) > rcAbs(norm[ax]))
-			ax = 2;
-		ax = (1<<ax)&3; // +1 mod 3
-		ay = (1<<ax)&3; // +1 mod 3
-
-		uva[0] = va[ax]*texScale;
-		uva[1] = va[ay]*texScale;
-		uvb[0] = vb[ax]*texScale;
-		uvb[1] = vb[ay]*texScale;
-		uvc[0] = vc[ax]*texScale;
-		uvc[1] = vc[ay]*texScale;
+			if (rcAbs(norm.z) > rcAbs(norm.y))
+				ax = 2;
+		}
+		else
+		{
+			if (rcAbs(norm.z) > rcAbs(norm.x))
+				ax = 2;
+		}
 		
-		dd->vertex(va, color, uva);
-		dd->vertex(vb, color, uvb);
-		dd->vertex(vc, color, uvc);
+		ax = (1 << ax) & 3; // +1 mod 3
+		ay = (1 << ax) & 3; // +1 mod 3
+
+		uva.x = duGetXYZByIndex(va, ax) * texScale;
+		uva.y = duGetXYZByIndex(va, ay) * texScale;
+		uvb.x = duGetXYZByIndex(vb, ax) * texScale;
+		uvb.y = duGetXYZByIndex(vb, ay) * texScale;
+		uvc.x = duGetXYZByIndex(vc, ax) * texScale;
+		uvc.y = duGetXYZByIndex(vc, ay) * texScale;
+
+		dd->vertex(va.x, va.y, va.z, color, uva.x, uva.y);
+		dd->vertex(va.x, va.y, va.z, color, uvb.x, uvb.y);
+		dd->vertex(va.x, va.y, va.z, color, uvc.x, uvc.y);
 	}
+
+	//for (int i = 0; i < ntris*3; i += 3)
+	//{
+	//	const float* norm = &normals[i];
+	//	unsigned int color;
+	//	unsigned char a = (unsigned char)(220*(2+norm[0]+norm[1])/4);
+	//	if (flags && !flags[i/3])
+	//		color = duLerpCol(duRGBA(a,a,a,255), unwalkable, 64);
+	//	else
+	//		color = duRGBA(a,a,a,255);
+
+	//	const float* va = &verts[tris[i+0]*3];
+	//	const float* vb = &verts[tris[i+1]*3];
+	//	const float* vc = &verts[tris[i+2]*3];
+	//	
+	//	int ax = 0, ay = 0;
+	//	if (rcAbs(norm[1]) > rcAbs(norm[ax]))
+	//		ax = 1;
+	//	if (rcAbs(norm[2]) > rcAbs(norm[ax]))
+	//		ax = 2;
+	//	ax = (1<<ax)&3; // +1 mod 3
+	//	ay = (1<<ax)&3; // +1 mod 3
+
+	//	uva[0] = va[ax]*texScale;
+	//	uva[1] = va[ay]*texScale;
+	//	uvb[0] = vb[ax]*texScale;
+	//	uvb[1] = vb[ay]*texScale;
+	//	uvc[0] = vc[ax]*texScale;
+	//	uvc[1] = vc[ay]*texScale;
+	//	
+	//	dd->vertex(va, color, uva);
+	//	dd->vertex(vb, color, uvb);
+	//	dd->vertex(vc, color, uvc);
+	//}
 	dd->end();
 	dd->texture(false);
 }
 
-void duDebugDrawTriMeshSlope(duDebugDraw* dd, const float* verts, int /*nverts*/,
-							 const int* tris, const float* normals, int ntris,
-							 const float walkableSlopeAngle, const float texScale)
+void duDebugDrawTriMeshSlope(struct duDebugDraw* dd, const std::vector<Vector3>& verts, const std::vector<Triangle>& tris, const std::vector<Vector3>& normals, const float walkableSlopeAngle, const float texScale)
+//void duDebugDrawTriMeshSlope(duDebugDraw* dd, const float* verts, int /*nverts*/,
+//							 const int* tris, const float* normals, int ntris,
+//							 const float walkableSlopeAngle, const float texScale)
 {
 	if (!dd) return;
-	if (!verts) return;
-	if (!tris) return;
-	if (!normals) return;
+	//if (!verts) return;
+	//if (!tris) return;
+	//if (!normals) return;
 	
 	const float walkableThr = cosf(walkableSlopeAngle/180.0f*DU_PI);
 	
-	float uva[2];
-	float uvb[2];
-	float uvc[2];
-	
+	//float uva[2];
+	//float uvb[2];
+	//float uvc[2];
+	Vector2 uva, uvb, uvc;
+
 	dd->texture(true);
 
 	const unsigned int unwalkable = duRGBA(192,128,0,255);
 	
 	dd->begin(DU_DRAW_TRIS);
-	for (int i = 0; i < ntris*3; i += 3)
+
+	for (int i = 0; i < tris.size(); ++i)
 	{
-		const float* norm = &normals[i];
+		const auto& tri = tris[i];
+		const auto& norm = normals[i];
 		unsigned int color;
-		unsigned char a = (unsigned char)(220*(2+norm[0]+norm[1])/4);
-		if (norm[1] < walkableThr)
-			color = duLerpCol(duRGBA(a,a,a,255), unwalkable, 64);
+		unsigned char a = (unsigned char)(220 * (2 + norm.x + norm.y) / 4);
+		if (norm.y < walkableThr)
+			color = duLerpCol(duRGBA(a, a, a, 255), unwalkable, 64);
 		else
-			color = duRGBA(a,a,a,255);
-		
-		const float* va = &verts[tris[i+0]*3];
-		const float* vb = &verts[tris[i+1]*3];
-		const float* vc = &verts[tris[i+2]*3];
-		
+			color = duRGBA(a, a, a, 255);
+
+
+		const auto& va = verts[tri.v0];
+		const auto& vb = verts[tri.v1];
+		const auto& vc = verts[tri.v2];
+		//const float* va = &verts[tris[i + 0] * 3];
+		//const float* vb = &verts[tris[i + 1] * 3];
+		//const float* vc = &verts[tris[i + 2] * 3];
+
 		int ax = 0, ay = 0;
-		if (rcAbs(norm[1]) > rcAbs(norm[ax]))
+		if (rcAbs(norm.y) > rcAbs(norm.x))
+		{
 			ax = 1;
-		if (rcAbs(norm[2]) > rcAbs(norm[ax]))
-			ax = 2;
-		ax = (1<<ax)&3; // +1 mod 3
-		ay = (1<<ax)&3; // +1 mod 3
-		
-		uva[0] = va[ax]*texScale;
-		uva[1] = va[ay]*texScale;
-		uvb[0] = vb[ax]*texScale;
-		uvb[1] = vb[ay]*texScale;
-		uvc[0] = vc[ax]*texScale;
-		uvc[1] = vc[ay]*texScale;
-		
-		dd->vertex(va, color, uva);
-		dd->vertex(vb, color, uvb);
-		dd->vertex(vc, color, uvc);
+			if (rcAbs(norm.z) > rcAbs(norm.y))
+				ax = 2;
+		}
+		else
+		{
+			if (rcAbs(norm.z) > rcAbs(norm.x))
+				ax = 2;
+		}
+
+		ax = (1 << ax) & 3; // +1 mod 3
+		ay = (1 << ax) & 3; // +1 mod 3
+
+		uva.x = duGetXYZByIndex(va, ax) * texScale;
+		uva.y = duGetXYZByIndex(va, ay) * texScale;
+		uvb.x = duGetXYZByIndex(vb, ax) * texScale;
+		uvb.y = duGetXYZByIndex(vb, ay) * texScale;
+		uvc.x = duGetXYZByIndex(vc, ax) * texScale;
+		uvc.y = duGetXYZByIndex(vc, ay) * texScale;
+
+		dd->vertex(va.x, va.y, va.z, color, uva.x, uva.y);
+		dd->vertex(vb.x, vb.y, vb.z, color, uvb.x, uvb.y);
+		dd->vertex(vc.x, vc.y, vc.z, color, uvc.x, uvc.y);
 	}
+
+
+	//for (int i = 0; i < ntris*3; i += 3)
+	//{
+	//	const float* norm = &normals[i];
+	//	unsigned int color;
+	//	unsigned char a = (unsigned char)(220*(2+norm[0]+norm[1])/4);
+	//	if (norm[1] < walkableThr)
+	//		color = duLerpCol(duRGBA(a,a,a,255), unwalkable, 64);
+	//	else
+	//		color = duRGBA(a,a,a,255);
+	//	
+	//	const float* va = &verts[tris[i+0]*3];
+	//	const float* vb = &verts[tris[i+1]*3];
+	//	const float* vc = &verts[tris[i+2]*3];
+	//	
+	//	int ax = 0, ay = 0;
+	//	if (rcAbs(norm[1]) > rcAbs(norm[ax]))
+	//		ax = 1;
+	//	if (rcAbs(norm[2]) > rcAbs(norm[ax]))
+	//		ax = 2;
+	//	ax = (1<<ax)&3; // +1 mod 3
+	//	ay = (1<<ax)&3; // +1 mod 3
+	//	
+	//	uva[0] = va[ax]*texScale;
+	//	uva[1] = va[ay]*texScale;
+	//	uvb[0] = vb[ax]*texScale;
+	//	uvb[1] = vb[ay]*texScale;
+	//	uvc[0] = vc[ax]*texScale;
+	//	uvc[1] = vc[ay]*texScale;
+	//	
+	//	dd->vertex(va, color, uva);
+	//	dd->vertex(vb, color, uvb);
+	//	dd->vertex(vc, color, uvc);
+	//}
 	dd->end();
 
 	dd->texture(false);

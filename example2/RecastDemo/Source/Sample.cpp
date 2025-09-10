@@ -1,4 +1,4 @@
-//
+﻿//
 // Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 //
 // This software is provided 'as-is', without any express or implied
@@ -112,12 +112,15 @@ void Sample::handleRender()
         return;
 
     // Draw mesh
-    duDebugDrawTriMesh(&m_dd, m_geom->getMesh()->getVerts(), m_geom->getMesh()->getVertCount(),
-        m_geom->getMesh()->getTris(), m_geom->getMesh()->getNormals(), m_geom->getMesh()->getTriCount(), 0, 1.0f);
+    duDebugDrawTriMesh(&m_dd, m_geom->getMesh()->getVerts(),
+        m_geom->getMesh()->getTris(), m_geom->getMesh()->getNormals(), 0, 1.0f);
     // Draw bounds
-    const float* bmin = m_geom->getMeshBoundsMin();
-    const float* bmax = m_geom->getMeshBoundsMax();
-    duDebugDrawBoxWire(&m_dd, bmin[0], bmin[1], bmin[2], bmax[0], bmax[1], bmax[2], duRGBA(255, 255, 255, 128), 1.0f);
+    //const float* bmin = m_geom->getMeshBoundsMin();
+    //const float* bmax = m_geom->getMeshBoundsMax();
+    //duDebugDrawBoxWire(&m_dd, bmin[0], bmin[1], bmin[2], bmax[0], bmax[1], bmax[2], duRGBA(255, 255, 255, 128), 1.0f);
+    const auto& bmin = m_geom->getNavMeshBoundsMin();
+    const auto& bmax = m_geom->getNavMeshBoundsMax();
+    duDebugDrawBoxWire(&m_dd, bmin.x, bmin.y, bmin.z, bmax.x, bmax.y, bmax.z, duRGBA(255, 255, 255, 128), 1.0f);
 }
 
 void Sample::handleRenderOverlay(double* /*proj*/, double* /*model*/, int* /*view*/)
@@ -193,8 +196,8 @@ void Sample::handleCommonSettings()
 
     if (m_geom)
     {
-        const float* bmin = m_geom->getNavMeshBoundsMin();
-        const float* bmax = m_geom->getNavMeshBoundsMax();
+        const auto& bmin = m_geom->getNavMeshBoundsMin();
+        const auto& bmax = m_geom->getNavMeshBoundsMax();
         int gw = 0, gh = 0;
         rcCalcGridSize(bmin, bmax, m_cellSize, &gw, &gh);
         char text[64];
@@ -434,14 +437,14 @@ void Sample::saveAll(const char* path, const dtNavMesh* mesh)
     header.magic = NAVMESHSET_MAGIC;
     header.version = NAVMESHSET_VERSION;
 
-    const float* bmin = m_geom->getMeshBoundsMin();
-    const float* bmax = m_geom->getMeshBoundsMax();
-    header.boundsMinX = bmin[0];
-    header.boundsMinY = bmin[1];
-    header.boundsMinZ = bmin[2];
-    header.boundsMaxX = bmax[0];
-    header.boundsMaxY = bmax[1];
-    header.boundsMaxZ = bmax[2];
+    const auto& bmin = m_geom->getMeshBoundsMin();
+    const auto& bmax = m_geom->getMeshBoundsMax();
+    header.boundsMinX = bmin.x;
+    header.boundsMinY = bmin.y;
+    header.boundsMinZ = bmin.z;
+    header.boundsMaxX = bmax.x;
+    header.boundsMaxY = bmax.y;
+    header.boundsMaxZ = bmax.z;
 
     header.numTiles = 0;
     for (int i = 0; i < mesh->getMaxTiles(); ++i)

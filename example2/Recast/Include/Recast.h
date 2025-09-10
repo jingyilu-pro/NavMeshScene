@@ -20,6 +20,7 @@
 #define RECAST_H
 
 #include "Common.h"
+#include <vector>
 
 /// The value of PI used by Recast.
 static const float RC_PI = 3.14159265f;
@@ -709,6 +710,12 @@ inline void rcVcross(float* dest, const float* v1, const float* v2)
 	dest[1] = v1[2]*v2[0] - v1[0]*v2[2];
 	dest[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
+inline void rcVcross(Vector3& dest, const Vector3& v1, const Vector3& v2)
+{
+	dest.x = v1.y * v2.z - v1.z * v2.y;
+	dest.y = v1.z * v2.x - v1.x * v2.z;
+	dest.z = v1.x * v2.y - v1.y * v2.x;
+}
 
 /// Derives the dot product of two vectors. (@p v1 . @p v2)
 /// @param[in]		v1	A Vector [(x, y, z)]
@@ -718,7 +725,10 @@ inline float rcVdot(const float* v1, const float* v2)
 {
 	return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
 }
-
+inline float rcVdot(const Vector3& v1, const Vector3& v2)
+{
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
 /// Performs a scaled vector addition. (@p v1 + (@p v2 * @p s))
 /// @param[out]		dest	The result vector. [(x, y, z)]
 /// @param[in]		v1		The base vector. [(x, y, z)]
@@ -751,6 +761,20 @@ inline void rcVsub(float* dest, const float* v1, const float* v2)
 	dest[0] = v1[0]-v2[0];
 	dest[1] = v1[1]-v2[1];
 	dest[2] = v1[2]-v2[2];
+}
+
+inline void rcVsub(float* dest, const Vector3& v1, const Vector3& v2)
+{
+	dest[0] = v1.x - v2.x;
+	dest[1] = v1.y - v2.y;
+	dest[2] = v1.z - v2.z;
+}
+
+inline void rcVsub(Vector3& dest, const Vector3& v1, const Vector3& v2)
+{
+	dest.x = v1.x - v2.x;
+	dest.y = v1.y - v2.y;
+	dest.z = v1.z - v2.z;
 }
 
 /// Selects the minimum value of each element from the specified vectors.
@@ -865,6 +889,13 @@ inline void rcVnormalize(float* v)
 	v[1] *= d;
 	v[2] *= d;
 }
+inline void rcVnormalize(Vector3& v)
+{
+	float d = 1.0f / rcSqrt(rcSqr(v.x) + rcSqr(v.y) + rcSqr(v.z));
+	v.x *= d;
+	v.y *= d;
+	v.z *= d;
+}
 
 /// @}
 /// @name Heightfield Functions
@@ -878,6 +909,7 @@ inline void rcVnormalize(float* v)
 /// @param[out]		minBounds	The minimum bounds of the AABB. [(x, y, z)] [Units: wu]
 /// @param[out]		maxBounds	The maximum bounds of the AABB. [(x, y, z)] [Units: wu]
 void rcCalcBounds(const float* verts, int numVerts, float* minBounds, float* maxBounds);
+void rcCalcBounds(const std::vector<Vector3>& verts, Vector3& minBounds, Vector3& maxBounds);
 
 /// Calculates the grid size based on the bounding box and grid cell size.
 /// @ingroup recast
@@ -887,6 +919,7 @@ void rcCalcBounds(const float* verts, int numVerts, float* minBounds, float* max
 /// @param[out]		sizeX		The width along the x-axis. [Limit: >= 0] [Units: vx]
 /// @param[out]		sizeZ		The height along the z-axis. [Limit: >= 0] [Units: vx]
 void rcCalcGridSize(const float* minBounds, const float* maxBounds, float cellSize, int* sizeX, int* sizeZ);
+void rcCalcGridSize(const Vector3& minBounds, const Vector3& maxBounds, float cellSize, int* sizeX, int* sizeZ);
 
 /// Initializes a new heightfield.
 /// See the #rcConfig documentation for more information on the configuration parameters.
@@ -926,8 +959,8 @@ bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int siz
 /// @param[in]		tris				The triangle vertex indices. [(vertA, vertB, vertC) * @p nt]
 /// @param[in]		numTris				The number of triangles.
 /// @param[out]		triAreaIDs			The triangle area ids. [Length: >= @p nt]
-void rcMarkWalkableTriangles(rcContext* context, float walkableSlopeAngle, const float* verts, int numVerts,
-							 const int* tris, int numTris, unsigned char* triAreaIDs); 
+void rcMarkWalkableTriangles(rcContext* context, float walkableSlopeAngle, const std::vector<Vector3>& verts,
+							 const std::vector<Triangle>& tris, unsigned char* triAreaIDs); 
 
 /// Sets the area id of all triangles with a slope greater than or equal to the specified value to #RC_NULL_AREA.
 /// 
@@ -991,7 +1024,7 @@ bool rcAddSpan(rcContext* context, rcHeightfield& heightfield,
 /// 									[Limit: >= 0] [Units: vx]
 /// @returns True if the operation completed successfully.
 bool rcRasterizeTriangle(rcContext* context,
-                         const float* v0, const float* v1, const float* v2,
+                         const Vector3& v0, const Vector3& v1, const Vector3& v2,
                          unsigned char areaID, rcHeightfield& heightfield, int flagMergeThreshold = 1);
 
 /// Rasterizes an indexed triangle mesh into the specified heightfield.
@@ -1011,8 +1044,8 @@ bool rcRasterizeTriangle(rcContext* context,
 ///										[Limit: >= 0] [Units: vx]
 /// @returns True if the operation completed successfully.
 bool rcRasterizeTriangles(rcContext* context,
-                          const float* verts, int numVerts,
-                          const int* tris, const unsigned char* triAreaIDs, int numTris,
+                          const std::vector<Vector3>& verts,
+                          const std::vector<Triangle>& tris, const unsigned char* triAreaIDs,
                           rcHeightfield& heightfield, int flagMergeThreshold = 1);
 
 /// Rasterizes an indexed triangle mesh into the specified heightfield.
@@ -1032,8 +1065,8 @@ bool rcRasterizeTriangles(rcContext* context,
 /// 									[Limit: >= 0] [Units: vx]
 /// @returns True if the operation completed successfully.
 bool rcRasterizeTriangles(rcContext* context,
-                          const float* verts, int numVerts,
-                          const unsigned short* tris, const unsigned char* triAreaIDs, int numTris,
+						  const std::vector<Vector3>& verts,
+                          const unsigned short* tris, const unsigned char* triAreaIDs,
                           rcHeightfield& heightfield, int flagMergeThreshold = 1);
 
 /// Rasterizes a triangle list into the specified heightfield.
@@ -1053,7 +1086,7 @@ bool rcRasterizeTriangles(rcContext* context,
 /// 									[Limit: >= 0] [Units: vx]
 /// @returns True if the operation completed successfully.
 bool rcRasterizeTriangles(rcContext* context,
-                          const float* verts, const unsigned char* triAreaIDs, int numTris,
+                          const std::vector<Vector3>& verts, const unsigned char* triAreaIDs, int numTris,
                           rcHeightfield& heightfield, int flagMergeThreshold = 1);
 
 /// Marks non-walkable spans as walkable if their maximum is within @p walkableClimb of the span below them.
