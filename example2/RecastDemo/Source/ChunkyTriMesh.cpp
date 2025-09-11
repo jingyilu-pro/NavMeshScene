@@ -301,6 +301,15 @@ bool rcCreateChunkyTriMesh(const std::vector<Vector3>& verts, const std::vector<
 	return true;
 }
 
+inline bool checkOverlapRect(const float amin[2], const float amax[2],
+	const float bmin[2], const float bmax[2])
+{
+	bool overlap = true;
+	overlap = (amin[0] > bmax[0] || amax[0] < bmin[0]) ? false : overlap;
+	overlap = (amin[1] > bmax[1] || amax[1] < bmin[1]) ? false : overlap;
+	return overlap;
+}
+
 inline bool checkOverlapRect(const Vector2& amin, const Vector2& amax,
 							 const Vector2& bmin, const Vector2& bmax)
 {

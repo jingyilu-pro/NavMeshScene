@@ -423,7 +423,7 @@ int Sample_TempObstacles::rasterizeTileLayers(
         const rcChunkyTriMeshNode& node = chunkyMesh->nodes[cid[i]];
         const auto& tris = chunkyMesh->tris;
 
-        memset(rc.triareas, 0, tris.size() * sizeof(unsigned char));
+        memset(rc.triareas, 0, node.n * sizeof(unsigned char));
         rcMarkWalkableTriangles(m_ctx, tcfg.walkableSlopeAngle,
             verts, tris, rc.triareas, node.i, node.n);
 

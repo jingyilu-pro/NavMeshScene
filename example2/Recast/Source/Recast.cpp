@@ -316,7 +316,7 @@ void rcCalcGridSize(const float* minBounds, const float* maxBounds, const float 
 void rcCalcGridSize(const Vector3& minBounds, const Vector3& maxBounds, const float cellSize, int* sizeX, int* sizeZ)
 {
 	*sizeX = (int)((maxBounds.x - minBounds.x) / cellSize + 0.5f);
-	*sizeZ = (int)((maxBounds.y - minBounds.y) / cellSize + 0.5f);
+	*sizeZ = (int)((maxBounds.z - minBounds.z) / cellSize + 0.5f);
 }
 
 
@@ -369,9 +369,9 @@ void rcMarkWalkableTriangles(rcContext* context, float walkableSlopeAngle, const
 	if (maxIdx == 0) maxIdx = (int)tris.size();
 
 	Vector3 normal;
-	for (auto i = minIdx; i < maxIdx; ++i)
+	for (auto i = 0; i < maxIdx; ++i)
 	{
-		const auto& tri = tris[i];
+		const auto& tri = tris[i + minIdx];
 		calcTriNormal(verts[tri.v0], verts[tri.v1], verts[tri.v2], normal);
 
 		// Check if the face is walkable.

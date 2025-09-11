@@ -507,9 +507,9 @@ bool rcRasterizeTriangles(rcContext* context,
 	auto& bounds = heightfield.bounds;
 	const float inverseCellSize = 1.0f / bounds.cs;
 	const float inverseCellHeight = 1.0f / bounds.ch;
-	for (int triIndex = minIdx; triIndex < maxIdx; ++triIndex)
+	for (int triIndex = 0; triIndex < maxIdx; ++triIndex)
 	{
-		const auto& tri = tris[triIndex];
+		const auto& tri = tris[triIndex + minIdx];
 		if (!rasterizeTri(verts[tri.v0], verts[tri.v1], verts[tri.v2], triAreaIDs[triIndex], heightfield, bounds.bmin, bounds.bmax, bounds.cs, inverseCellSize, inverseCellHeight, flagMergeThreshold))
 		{
 			context->log(RC_LOG_ERROR, "rcRasterizeTriangles: Out of memory.");
