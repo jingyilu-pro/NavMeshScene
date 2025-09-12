@@ -321,7 +321,7 @@ void rcCalcGridSize(const Vector3& minBounds, const Vector3& maxBounds, const fl
 
 
 bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int sizeX, int sizeZ,
-                         const float* minBounds, const float* maxBounds,
+                         const Vector3& minBounds, const Vector3& maxBounds,
                          float cellSize, float cellHeight)
 {
 	rcIgnoreUnused(context);

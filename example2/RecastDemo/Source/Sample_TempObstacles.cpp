@@ -364,21 +364,23 @@ int Sample_TempObstacles::rasterizeTileLayers(
     const rcChunkyTriMesh* chunkyMesh = m_geom->getChunkyMesh();
 
     // Tile bounds.
-    const float tcs = cfg.tileSize * cfg.cs;
+    const auto& cfgBounds = cfg.bounds;
+    const float tcs = cfg.tileSize * cfgBounds.cs;
 
     rcConfig tcfg;
     memcpy(&tcfg, &cfg, sizeof(tcfg));
+    auto& tcfgBounds = tcfg.bounds;
 
-    tcfg.bmin[0] = cfg.bmin[0] + tx*tcs;
-    tcfg.bmin[1] = cfg.bmin[1];
-    tcfg.bmin[2] = cfg.bmin[2] + ty*tcs;
-    tcfg.bmax[0] = cfg.bmin[0] + (tx + 1)*tcs;
-    tcfg.bmax[1] = cfg.bmax[1];
-    tcfg.bmax[2] = cfg.bmin[2] + (ty + 1)*tcs;
-    tcfg.bmin[0] -= tcfg.borderSize*tcfg.cs;
-    tcfg.bmin[2] -= tcfg.borderSize*tcfg.cs;
-    tcfg.bmax[0] += tcfg.borderSize*tcfg.cs;
-    tcfg.bmax[2] += tcfg.borderSize*tcfg.cs;
+    tcfgBounds.bmin.x = cfgBounds.bmin.x + tx*tcs;
+    tcfgBounds.bmin.y = cfgBounds.bmin.y;
+    tcfgBounds.bmin.z = cfgBounds.bmin.z + ty*tcs;
+    tcfgBounds.bmax.x = cfgBounds.bmin.x + (tx + 1)*tcs;
+    tcfgBounds.bmax.y = cfgBounds.bmax.y;
+    tcfgBounds.bmax.z = cfgBounds.bmin.z + (ty + 1)*tcs;
+    tcfgBounds.bmin.x -= tcfg.borderSize* tcfgBounds.cs;
+    tcfgBounds.bmin.z -= tcfg.borderSize* tcfgBounds.cs;
+    tcfgBounds.bmax.x += tcfg.borderSize* tcfgBounds.cs;
+    tcfgBounds.bmax.z += tcfg.borderSize* tcfgBounds.cs;
 
     // Allocate voxel heightfield where we rasterize our input data to.
     rc.solid = rcAllocHeightfield();
@@ -387,7 +389,7 @@ int Sample_TempObstacles::rasterizeTileLayers(
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'solid'.");
         return 0;
     }
-    if (!rcCreateHeightfield(m_ctx, *rc.solid, tcfg.width, tcfg.height, tcfg.bmin, tcfg.bmax, tcfg.cs, tcfg.ch))
+    if (!rcCreateHeightfield(m_ctx, *rc.solid, tcfg.width, tcfg.height, tcfgBounds.bmin, tcfgBounds.bmax, tcfgBounds.cs, tcfgBounds.ch))
     {
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
         return 0;
@@ -408,19 +410,19 @@ int Sample_TempObstacles::rasterizeTileLayers(
     //tbmin[1] = tcfg.bmin[2];
     //tbmax[0] = tcfg.bmax[0];
     //tbmax[1] = tcfg.bmax[2];
-    Vector2 tbmin{ tcfg.bmin[0], tcfg.bmin[2] };
-    Vector2 tbmax{ tcfg.bmax[0], tcfg.bmax[2] };
+    Vector2 tbmin{ tcfgBounds.bmin.x, tcfgBounds.bmin.z };
+    Vector2 tbmax{ tcfgBounds.bmax.x, tcfgBounds.bmax.z };
 
-    int cid[512];// TODO: Make grow when returning too many items.
-    const int ncid = rcGetChunksOverlappingRect(chunkyMesh, tbmin, tbmax, cid, 512);
-    if (!ncid)
+    std::vector<int> ids;
+    rcGetChunksOverlappingRect(chunkyMesh, tbmin, tbmax, ids);
+    if (ids.empty())
     {
         return 0; // empty
     }
 
-    for (int i = 0; i < ncid; ++i)
+    for(auto id : ids)
     {
-        const rcChunkyTriMeshNode& node = chunkyMesh->nodes[cid[i]];
+        const rcChunkyTriMeshNode& node = chunkyMesh->nodes[id];
         const auto& tris = chunkyMesh->tris;
 
         memset(rc.triareas, 0, node.n * sizeof(unsigned char));
@@ -1329,12 +1331,13 @@ bool Sample_TempObstacles::handleBuild()
     // Generation params.
     rcConfig cfg;
     memset(&cfg, 0, sizeof(cfg));
-    cfg.cs = m_cellSize;
-    cfg.ch = m_cellHeight;
+    auto& bounds = cfg.bounds;
+    bounds.cs = m_cellSize;
+    bounds.ch = m_cellHeight;
     cfg.walkableSlopeAngle = m_agentMaxSlope;
-    cfg.walkableHeight = (int)ceilf(m_agentHeight / cfg.ch);
-    cfg.walkableClimb = (int)floorf(m_agentMaxClimb / cfg.ch);
-    cfg.walkableRadius = (int)ceilf(m_agentRadius / cfg.cs);
+    cfg.walkableHeight = (int)ceilf(m_agentHeight / bounds.ch);
+    cfg.walkableClimb = (int)floorf(m_agentMaxClimb / bounds.ch);
+    cfg.walkableRadius = (int)ceilf(m_agentRadius / bounds.cs);
     cfg.maxEdgeLen = (int)(m_edgeMaxLen / m_cellSize);
     cfg.maxSimplificationError = m_edgeMaxError;
     cfg.minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
@@ -1346,8 +1349,8 @@ bool Sample_TempObstacles::handleBuild()
     cfg.height = cfg.tileSize + cfg.borderSize * 2;
     cfg.detailSampleDist = m_detailSampleDist < 0.9f ? 0 : m_cellSize * m_detailSampleDist;
     cfg.detailSampleMaxError = m_cellHeight * m_detailSampleMaxError;
-    rcVcopy(cfg.bmin, bmin);
-    rcVcopy(cfg.bmax, bmax);
+    rcVcopy(bounds.bmin, bmin);
+    rcVcopy(bounds.bmax, bmax);
 
     // Tile cache params.
     dtTileCacheParams tcparams;

@@ -851,12 +851,14 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 
     // Init build configuration from GUI
     memset(&m_cfg, 0, sizeof(m_cfg));
-    m_cfg.cs = m_cellSize;
-    m_cfg.ch = m_cellHeight;
+    auto& bounds = m_cfg.bounds;
+
+    bounds.cs = m_cellSize;
+    bounds.ch = m_cellHeight;
     m_cfg.walkableSlopeAngle = m_agentMaxSlope;
-    m_cfg.walkableHeight = (int)ceilf(m_agentHeight / m_cfg.ch);
-    m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / m_cfg.ch);
-    m_cfg.walkableRadius = (int)ceilf(m_agentRadius / m_cfg.cs);
+    m_cfg.walkableHeight = (int)ceilf(m_agentHeight / bounds.ch);
+    m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / bounds.ch);
+    m_cfg.walkableRadius = (int)ceilf(m_agentRadius / bounds.cs);
     m_cfg.maxEdgeLen = (int)(m_edgeMaxLen / m_cellSize);
     m_cfg.maxSimplificationError = m_edgeMaxError;
     m_cfg.minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
@@ -890,12 +892,12 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
     // For example if you build a navmesh for terrain, and want the navmesh tiles to match the terrain tile size
     // you will need to pass in data from neighbour terrain tiles too! In a simple case, just pass in all the 8 neighbours,
     // or use the bounding box below to only pass in a sliver of each of the 8 neighbours.
-    rcVcopy(m_cfg.bmin, bmin);
-    rcVcopy(m_cfg.bmax, bmax);
-    m_cfg.bmin[0] -= m_cfg.borderSize*m_cfg.cs;
-    m_cfg.bmin[2] -= m_cfg.borderSize*m_cfg.cs;
-    m_cfg.bmax[0] += m_cfg.borderSize*m_cfg.cs;
-    m_cfg.bmax[2] += m_cfg.borderSize*m_cfg.cs;
+    rcVcopy(bounds.bmin, bmin);
+    rcVcopy(bounds.bmax, bmax);
+    bounds.bmin.x -= m_cfg.borderSize* bounds.cs;
+    bounds.bmin.z -= m_cfg.borderSize* bounds.cs;
+    bounds.bmax.x += m_cfg.borderSize* bounds.cs;
+    bounds.bmax.z += m_cfg.borderSize* bounds.cs;
 
     // Reset build times gathering.
     m_ctx->resetTimers();
@@ -914,7 +916,7 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'solid'.");
         return 0;
     }
-    if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
+    if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg.width, m_cfg.height, bounds.bmin, bounds.bmax, bounds.cs, bounds.ch))
     {
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
         return 0;
@@ -932,20 +934,20 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
 
     //float tbmin[2], tbmax[2];
     Vector2 tbmin, tbmax;
-    tbmin.x = m_cfg.bmin[0];
-    tbmin.y = m_cfg.bmin[2];
-    tbmax.x = m_cfg.bmax[0];
-    tbmax.y = m_cfg.bmax[2];
-    int cid[512];// TODO: Make grow when returning too many items.
-    const int ncid = rcGetChunksOverlappingRect(chunkyMesh, tbmin, tbmax, cid, 512);
-    if (!ncid)
+    tbmin.x = bounds.bmin.x;
+    tbmin.y = bounds.bmin.z;
+    tbmax.x = bounds.bmax.x;
+    tbmax.y = bounds.bmax.z;
+    std::vector<int> ids;
+   rcGetChunksOverlappingRect(chunkyMesh, tbmin, tbmax, ids);
+    if (ids.empty())
         return 0;
 
     m_tileTriCount = 0;
 
-    for (int i = 0; i < ncid; ++i)
+    for(auto id : ids)
     {
-        const rcChunkyTriMeshNode& node = chunkyMesh->nodes[cid[i]];
+        const rcChunkyTriMeshNode& node = chunkyMesh->nodes[id];
         const auto& tris = chunkyMesh->tris;
         const int nctris = node.n;
 
@@ -1188,8 +1190,8 @@ unsigned char* Sample_TileMesh::buildTileMesh(const int tx, const int ty, const 
         params.tileLayer = 0;
         rcVcopy(params.bmin, m_pmesh->bounds.bmin);
         rcVcopy(params.bmax, m_pmesh->bounds.bmax);
-        params.cs = m_cfg.cs;
-        params.ch = m_cfg.ch;
+        params.cs = bounds.cs;
+        params.ch = bounds.ch;
         params.buildBvTree = true;
 
         if (!dtCreateNavMeshData(&params, &navData, &navDataSize))

@@ -505,18 +505,18 @@ bool InputGeom::raycastMesh(Vector3& src, Vector3& dst, float& tmin)
 	//q[0] = src[0] + (dst[0]-src[0])*btmax;
 	//q[1] = src[2] + (dst[2]-src[2])*btmax;
 	
-	int cid[512];
-	const int ncid = rcGetChunksOverlappingSegment(m_chunkyMesh, p, q, cid, 512);
-	if (!ncid)
+	std::vector<int> ids;
+	rcGetChunksOverlappingSegment(m_chunkyMesh, p, q, ids);
+	if (ids.empty())
 		return false;
 	
 	tmin = 1.0f;
 	bool hit = false;
 	const auto& verts = m_mesh->getVerts();
 	
-	for (int i = 0; i < ncid; ++i)
+	for(auto id : ids)
 	{
-		const rcChunkyTriMeshNode& node = m_chunkyMesh->nodes[cid[i]];
+		const rcChunkyTriMeshNode& node = m_chunkyMesh->nodes[id];
 		const int ntris = node.n;
 
 		for (int j = 0; j < ntris; j++)

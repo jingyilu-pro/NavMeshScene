@@ -403,12 +403,13 @@ bool Sample_SoloMesh::handleBuild()
 
     // Init build configuration from GUI
     memset(&m_cfg, 0, sizeof(m_cfg));
-    m_cfg.cs = m_cellSize;
-    m_cfg.ch = m_cellHeight;
+    auto& bounds = m_cfg.bounds;
+    bounds.cs = m_cellSize;
+    bounds.ch = m_cellHeight;
     m_cfg.walkableSlopeAngle = m_agentMaxSlope;
-    m_cfg.walkableHeight = (int)ceilf(m_agentHeight / m_cfg.ch);
-    m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / m_cfg.ch);
-    m_cfg.walkableRadius = (int)ceilf(m_agentRadius / m_cfg.cs);
+    m_cfg.walkableHeight = (int)ceilf(m_agentHeight / bounds.ch);
+    m_cfg.walkableClimb = (int)floorf(m_agentMaxClimb / bounds.ch);
+    m_cfg.walkableRadius = (int)ceilf(m_agentRadius / bounds.cs);
     m_cfg.maxEdgeLen = (int)(m_edgeMaxLen / m_cellSize);
     m_cfg.maxSimplificationError = m_edgeMaxError;
     m_cfg.minRegionArea = (int)rcSqr(m_regionMinSize);		// Note: area = size*size
@@ -420,9 +421,9 @@ bool Sample_SoloMesh::handleBuild()
     // Set the area where the navigation will be build.
     // Here the bounds of the input mesh are used, but the
     // area could be specified by an user defined box, etc.
-    rcVcopy(m_cfg.bmin, bmin);
-    rcVcopy(m_cfg.bmax, bmax);
-    rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
+    rcVcopy(bounds.bmin, bmin);
+    rcVcopy(bounds.bmax, bmax);
+    rcCalcGridSize(bounds.bmin, bounds.bmax, bounds.cs, &m_cfg.width, &m_cfg.height);
 
     // Reset build times gathering.
     m_ctx->resetTimers();
@@ -445,7 +446,7 @@ bool Sample_SoloMesh::handleBuild()
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'solid'.");
         return false;
     }
-    if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg.width, m_cfg.height, m_cfg.bmin, m_cfg.bmax, m_cfg.cs, m_cfg.ch))
+    if (!rcCreateHeightfield(m_ctx, *m_solid, m_cfg.width, m_cfg.height, bounds.bmin, bounds.bmax, bounds.cs, bounds.ch))
     {
         m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
         return false;
@@ -715,8 +716,8 @@ bool Sample_SoloMesh::handleBuild()
         params.walkableClimb = m_agentMaxClimb;
         rcVcopy(params.bmin, m_pmesh->bounds.bmin);
         rcVcopy(params.bmax, m_pmesh->bounds.bmax);
-        params.cs = m_cfg.cs;
-        params.ch = m_cfg.ch;
+        params.cs = bounds.cs;
+        params.ch = bounds.ch;
         params.buildBvTree = true;
 
         if (!dtCreateNavMeshData(&params, &navData, &navDataSize))

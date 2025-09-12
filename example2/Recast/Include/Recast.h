@@ -229,18 +229,18 @@ struct rcConfig
 	
 	/// The size of the non-navigable border around the heightfield. [Limit: >=0] [Units: vx]
 	int borderSize;
-
+	Bounds bounds;
 	/// The xz-plane cell size to use for fields. [Limit: > 0] [Units: wu] 
-	float cs;
+	//float cs;
 
 	/// The y-axis cell size to use for fields. [Limit: > 0] [Units: wu]
-	float ch;
+	//float ch;
 
 	/// The minimum bounds of the field's AABB. [(x, y, z)] [Units: wu]
-	float bmin[3]; 
+	//float bmin[3]; 
 
 	/// The maximum bounds of the field's AABB. [(x, y, z)] [Units: wu]
-	float bmax[3];
+	//float bmax[3];
 
 	/// The maximum slope that is considered walkable. [Limits: 0 <= value < 90] [Units: Degrees] 
 	float walkableSlopeAngle;
@@ -937,7 +937,7 @@ void rcCalcGridSize(const Vector3& minBounds, const Vector3& maxBounds, float ce
 /// @param[in]		cellHeight	The y-axis cell size to use for field. [Limit: > 0] [Units: wu]
 /// @returns True if the operation completed successfully.
 bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int sizeX, int sizeZ,
-						 const float* minBounds, const float* maxBounds,
+						 const Vector3& minBounds, const Vector3& maxBounds,
 						 float cellSize, float cellHeight);
 
 /// Sets the area id of all triangles with a slope below the specified value

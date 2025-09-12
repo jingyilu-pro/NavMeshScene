@@ -55,10 +55,10 @@ private:
 bool rcCreateChunkyTriMesh(const std::vector<Vector3>& verts, const std::vector<Triangle>& tris, int trisPerChunk, rcChunkyTriMesh* cm);
 
 /// Returns the chunk indices which overlap the input rectable.
-int rcGetChunksOverlappingRect(const rcChunkyTriMesh* cm, Vector2& bmin, Vector2& bmax, int* ids, const int maxIds);
+void rcGetChunksOverlappingRect(const rcChunkyTriMesh* cm, Vector2& bmin, Vector2& bmax, std::vector<int>& ids);
 
 /// Returns the chunk indices which overlap the input segment.
-int rcGetChunksOverlappingSegment(const rcChunkyTriMesh* cm, Vector2& p, Vector2& q, int* ids, const int maxIds);
+void rcGetChunksOverlappingSegment(const rcChunkyTriMesh* cm, Vector2& p, Vector2& q, std::vector<int>& ids);
 
 
 #endif // CHUNKYTRIMESH_H

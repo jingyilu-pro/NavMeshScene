@@ -319,11 +319,10 @@ inline bool checkOverlapRect(const Vector2& amin, const Vector2& amax,
 	return overlap;
 }
 
-int rcGetChunksOverlappingRect(const rcChunkyTriMesh* cm, Vector2& bmin, Vector2& bmax, int* ids, const int maxIds)
+void rcGetChunksOverlappingRect(const rcChunkyTriMesh* cm, Vector2& bmin, Vector2& bmax, std::vector<int>& ids)
 {
 	// Traverse tree
 	int i = 0;
-	int n = 0;
 	while (i < cm->nnodes)
 	{
 		const rcChunkyTriMeshNode* node = &cm->nodes[i];
@@ -332,11 +331,7 @@ int rcGetChunksOverlappingRect(const rcChunkyTriMesh* cm, Vector2& bmin, Vector2
 		
 		if (isLeafNode && overlap)
 		{
-			if (n < maxIds)
-			{
-				ids[n] = i;
-				n++;
-			}
+			ids.push_back(i);
 		}
 		
 		if (overlap || isLeafNode)
@@ -347,8 +342,6 @@ int rcGetChunksOverlappingRect(const rcChunkyTriMesh* cm, Vector2& bmin, Vector2
 			i += escapeIndex;
 		}
 	}
-	
-	return n;
 }
 
 
@@ -431,13 +424,10 @@ static bool checkOverlapSegment(const Vector2& p, const Vector2& q,
 	return true;
 }
 
-int rcGetChunksOverlappingSegment(const rcChunkyTriMesh* cm,
-								  Vector2& p, Vector2& q,
-								  int* ids, const int maxIds)
+void rcGetChunksOverlappingSegment(const rcChunkyTriMesh* cm, Vector2& p, Vector2& q, std::vector<int>& ids)
 {
 	// Traverse tree
 	int i = 0;
-	int n = 0;
 	while (i < cm->nnodes)
 	{
 		const rcChunkyTriMeshNode* node = &cm->nodes[i];
@@ -446,11 +436,7 @@ int rcGetChunksOverlappingSegment(const rcChunkyTriMesh* cm,
 		
 		if (isLeafNode && overlap)
 		{
-			if (n < maxIds)
-			{
-				ids[n] = i;
-				n++;
-			}
+			ids.push_back(i);
 		}
 		
 		if (overlap || isLeafNode)
@@ -461,6 +447,4 @@ int rcGetChunksOverlappingSegment(const rcChunkyTriMesh* cm,
 			i += escapeIndex;
 		}
 	}
-	
-	return n;
 }
