@@ -486,6 +486,9 @@ bool Sample_SoloMesh::handleBuild()
     // Once all geoemtry is rasterized, we do initial pass of filtering to
     // remove unwanted overhangs caused by the conservative rasterization
     // as well as filter spans where the character cannot possibly stand.
+    // 所有几何体栅格化完成后，我们会进行初始过滤，以
+    // 移除保守栅格化造成的不必要的悬垂部分
+    // 以及过滤角色无法站立的跨度。
     if (m_filterLowHangingObstacles)
         rcFilterLowHangingWalkableObstacles(m_ctx, m_cfg.walkableClimb, *m_solid);
     if (m_filterLedgeSpans)

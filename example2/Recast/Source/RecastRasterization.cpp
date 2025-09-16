@@ -294,6 +294,90 @@ static void dividePoly(const float* inVerts, int inVertsCount,
 	*outVerts2Count = poly2Vert;
 }
 
+static void dividePoly(const Vector3* inVerts, int inVertsCount,
+	Vector3* outVerts1, int* outVerts1Count,
+	Vector3* outVerts2, int* outVerts2Count,
+	float axisOffset, rcAxis axis)
+{
+	rcAssert(inVertsCount <= 12);
+
+	// How far positive or negative away from the separating axis is each vertex.
+	float inVertAxisDelta[12];
+	for (int inVert = 0; inVert < inVertsCount; ++inVert)
+	{
+		inVertAxisDelta[inVert] = axisOffset;
+		if (axis == RC_AXIS_X)
+		{
+			inVertAxisDelta[inVert] -= inVerts[inVert].x;
+		}
+		else if (axis == RC_AXIS_Y)
+		{
+			inVertAxisDelta[inVert] -= inVerts[inVert].y;
+		}
+		else
+		{
+			inVertAxisDelta[inVert] -= inVerts[inVert].z;
+		}
+	}
+
+	int poly1Vert = 0;
+	int poly2Vert = 0;
+	// inVertA 0 1 2
+	// inVertB 2 0 1
+	for (int inVertA = 0, inVertB = inVertsCount - 1; inVertA < inVertsCount; inVertB = inVertA, ++inVertA)
+	{
+		// If the two vertices are on the same side of the separating axis
+		bool sameSide = (inVertAxisDelta[inVertA] >= 0) == (inVertAxisDelta[inVertB] >= 0);
+
+		if (!sameSide)
+		{
+			//通过相似三角形原理, 算出切割轴与d[j],d[i]这条边的交点
+			//与切割轴的交点肯定是切割后的两个多边形共有的
+
+			float s = inVertAxisDelta[inVertB] / (inVertAxisDelta[inVertB] - inVertAxisDelta[inVertA]);
+
+			outVerts1[poly1Vert].x = inVerts[inVertB].x + (inVerts[inVertA].x - inVerts[inVertB].x) * s;
+			outVerts1[poly1Vert].y = inVerts[inVertB].y + (inVerts[inVertA].y - inVerts[inVertB].y) * s;
+			outVerts1[poly1Vert].z = inVerts[inVertB].z + (inVerts[inVertA].z - inVerts[inVertB].z) * s;
+			rcVcopy(outVerts2[poly2Vert], outVerts1[poly1Vert]);
+			poly1Vert++;
+			poly2Vert++;
+
+			// add the inVertA point to the right polygon. Do NOT add points that are on the dividing line
+			// since these were already added above
+			if (inVertAxisDelta[inVertA] > 0)
+			{
+				rcVcopy(outVerts1[poly1Vert], inVerts[inVertA]);
+				poly1Vert++;
+			}
+			else if (inVertAxisDelta[inVertA] < 0)
+			{
+				rcVcopy(outVerts2[poly2Vert], inVerts[inVertA]);
+				poly2Vert++;
+			}
+		}
+		else
+		{
+			//符号相同,说明d[j],d[i]这条边在切割轴的一侧,此时与切割轴无交点
+			// add the inVertA point to the right polygon. Addition is done even for points on the dividing line
+			if (inVertAxisDelta[inVertA] >= 0)
+			{
+				rcVcopy(outVerts1[poly1Vert], inVerts[inVertA]);
+				poly1Vert++;
+				if (inVertAxisDelta[inVertA] != 0)
+				{
+					continue;
+				}
+			}
+			rcVcopy(outVerts2[poly2Vert], inVerts[inVertA]);
+			poly2Vert++;
+		}
+	}
+
+	*outVerts1Count = poly1Vert;
+	*outVerts2Count = poly2Vert;
+}
+
 ///	Rasterize a single triangle to the heightfield.
 ///
 ///	This code is extremely hot, so much care should be given to maintaining maximum perf here.
@@ -356,15 +440,21 @@ static bool rasterizeTri(const Vector3& v0, const Vector3& v1, const Vector3& v2
 	z1 = rcClamp(z1, 0, h - 1);
 
 	// Clip the triangle into all grid cells it touches.
-	float buf[7 * 3 * 4];
-	float* in = buf;
-	float* inRow = buf + 7 * 3;
-	float* p1 = inRow + 7 * 3;
-	float* p2 = p1 + 7 * 3;
+	//float buf[7 * 3 * 4];
+	//float* in = buf;
+	//float* inRow = buf + 7 * 3;
+	//float* p1 = inRow + 7 * 3;
+	//float* p2 = p1 + 7 * 3;
 
-	rcVcopy(&in[0], v0);
-	rcVcopy(&in[1 * 3], v1);
-	rcVcopy(&in[2 * 3], v2);
+	Vector3 buf[7 * 4];
+	Vector3* in = buf;
+	Vector3* inRow = buf + 7;
+	Vector3* p1 = inRow + 7;
+	Vector3* p2 = p1 + 7;
+
+	rcVcopy(in[0], v0);
+	rcVcopy(in[1], v1);
+	rcVcopy(in[2], v2);
 	int nvRow;
 	int nvIn = 3;
 
@@ -385,17 +475,17 @@ static bool rasterizeTri(const Vector3& v0, const Vector3& v1, const Vector3& v2
 		}
 		
 		// find X-axis bounds of the row
-		float minX = inRow[0];
-		float maxX = inRow[0];
+		float minX = inRow[0].x;
+		float maxX = inRow[0].x;
 		for (int vert = 1; vert < nvRow; ++vert)
 		{
-			if (minX > inRow[vert * 3])
+			if (minX > inRow[vert].x)
 			{
-				minX = inRow[vert * 3];
+				minX = inRow[vert].x;
 			}
-			if (maxX < inRow[vert * 3])
+			if (maxX < inRow[vert].x)
 			{
-				maxX = inRow[vert * 3];
+				maxX = inRow[vert].x;
 			}
 		}
 		int x0 = (int)((minX - heightfieldBBMin.x) * inverseCellSize);
@@ -427,12 +517,12 @@ static bool rasterizeTri(const Vector3& v0, const Vector3& v1, const Vector3& v2
 			}
 			
 			// Calculate min and max of the span.
-			float spanMin = p1[1];
-			float spanMax = p1[1];
+			float spanMin = p1[0].y;
+			float spanMax = p1[0].y;
 			for (int vert = 1; vert < nv; ++vert)
 			{
-				spanMin = rcMin(spanMin, p1[vert * 3 + 1]);
-				spanMax = rcMax(spanMax, p1[vert * 3 + 1]);
+				spanMin = rcMin(spanMin, p1[vert].y);
+				spanMax = rcMax(spanMax, p1[vert].y);
 			}
 			spanMin -= heightfieldBBMin.y;
 			spanMax -= heightfieldBBMin.y;
