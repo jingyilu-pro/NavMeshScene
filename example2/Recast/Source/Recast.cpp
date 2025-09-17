@@ -542,6 +542,8 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 
 					// Iterate over all neighbour spans and check if any of the is
 					// accessible from current cell.
+					// 遍历所有邻居跨度，并检查是否有任何跨度
+					// 可以从当前单元格访问。
 					const rcCompactCell& neighborCell = compactHeightfield.cells[neighborX + neighborZ * zStride];
 					for (int k = (int)neighborCell.index, nk = (int)(neighborCell.index + neighborCell.count); k < nk; ++k)
 					{
@@ -551,6 +553,8 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 
 						// Check that the gap between the spans is walkable,
 						// and that the climb height between the gaps is not too high.
+						// 检查跨度之间的间隙是否可通行，
+						// 并且间隙之间的攀爬高度不要太高。
 						if ((top - bot) >= walkableHeight && rcAbs((int)neighborSpan.y - (int)span.y) <= walkableClimb)
 						{
 							// Mark direction as walkable.

@@ -126,8 +126,8 @@ void rcFilterLedgeSpans(rcContext* context, const int walkableHeight, const int 
 					// 从邻居跨度下的区域开始
 					int neighborCeiling = neighborSpan ? (int)neighborSpan->smin : MAX_HEIGHTFIELD_HEIGHT;
 
-					// Skip neighbour if the gap between the spans is too small.
-					// 如果跨度之间的间隙太小，则跳过邻居。
+					// Skip neighbour if the gap between the spans is too big.
+					// 如果跨度之间的间隙太大，则跳过邻居。
 					if (rcMin(ceiling, neighborCeiling) - floor >= walkableHeight)
 					{
 						lowestNeighborFloorDifference = (-walkableClimb - 1);

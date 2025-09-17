@@ -504,6 +504,9 @@ bool Sample_SoloMesh::handleBuild()
     // Compact the heightfield so that it is faster to handle from now on.
     // This will result more cache coherent data as well as the neighbours
     // between walkable cells will be calculated.
+    // 压缩高度场，以便以后处理速度更快。
+    // 这将产生更多缓存一致的数据以及可行走单元之间的邻居数据。
+    // 可行走单元之间的邻居数据将被计算。
     m_chf = rcAllocCompactHeightfield();
     if (!m_chf)
     {
@@ -560,10 +563,36 @@ bool Sample_SoloMesh::handleBuild()
     //   - can be slow and create a bit ugly tessellation (still better than monotone)
     //     if you have large open areas with small obstacles (not a problem if you use tiles)
     //   * good choice to use for tiled navmesh with medium and small sized tiles
+    // 对高度场进行分区，以便我们稍后可以使用简单的算法对可行走区域进行三角测量。
+    // 有三种划分方法，各有优缺点：
+    // 1) 分水岭划分
+    // - 经典的 Recast 划分
+    // - 创建最精细的曲面细分
+    // - 通常最慢
+    // - 将高度场划分成没有孔洞或重叠的精细区域
+    // - 在某些特殊情况下，此方法会产生孔洞和重叠
+    // - 当小型障碍物靠近较大的开放区域时，可能会出现孔洞（三角剖分可以处理这种情况）
+    // - 如果您有狭窄的螺旋形走廊（例如楼梯），可能会发生重叠，这会导致三角剖分失败
+    // * 通常，如果您预先计算了导航网格，则这是最佳选择；如果您有较大的开放区域，请使用此方法
+    // 2) 单调划分
+    // - 最快
+    // - 将高度场划分成没有孔洞和重叠的区域（保证）
+    // - 创建细长的多边形，有时会导致路径绕行
+    // * 如果您需要快速导航网格，请使用此方法生成
+    // 3) 层分割
+    // - 速度很快
+    // - 将高地分割成互不重叠的区域
+    // - 依赖三角剖分代码来处理空洞（因此比单调分割慢）
+    // - 比单调分割生成更好的三角形
+    // - 不存在分水岭分割的极端情况
+    // - 速度可能较慢，并且会产生略微难看的曲面细分（但仍然比单调分割好）
+    // 如果您有大片开放区域且障碍物较少（使用图块则没有问题）
+    // * 对于使用中小型图块的平铺导航网格，这是一个不错的选择
 
     if (m_partitionType == SAMPLE_PARTITION_WATERSHED)
     {
         // Prepare for region partitioning, by calculating distance field along the walkable surface.
+        // 通过计算沿可步行表面的距离场来准备区域划分。
         if (!rcBuildDistanceField(m_ctx, *m_chf))
         {
             m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
@@ -571,6 +600,7 @@ bool Sample_SoloMesh::handleBuild()
         }
 
         // Partition the walkable surface into simple regions without holes.
+        // 将可行走表面划分为没有洞的简单区域。
         if (!rcBuildRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
         {
             m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
@@ -581,6 +611,8 @@ bool Sample_SoloMesh::handleBuild()
     {
         // Partition the walkable surface into simple regions without holes.
         // Monotone partitioning does not need distancefield.
+        // 将可行走表面划分为没有孔洞的简单区域。
+        // 单调划分不需要距离场。
         if (!rcBuildRegionsMonotone(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
         {
             m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build monotone regions.");
@@ -590,6 +622,7 @@ bool Sample_SoloMesh::handleBuild()
     else // SAMPLE_PARTITION_LAYERS
     {
         // Partition the walkable surface into simple regions without holes.
+        // 将可行走表面划分为没有孔洞的简单区域。
         if (!rcBuildLayerRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea))
         {
             m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build layer regions.");

@@ -21,6 +21,8 @@
 
 #include "Common.h"
 #include <vector>
+#include <unordered_map>
+#include <list>
 
 /// The value of PI used by Recast.
 static const float RC_PI = 3.14159265f;
@@ -344,6 +346,15 @@ struct rcCompactCell
 };
 
 /// Represents a span of unobstructed space within a compact heightfield.
+/*
+* 一个 CompactSpan 与周围 Neighbor Compact Span【联通性】数据保存主要存放在 rcCompactSpan 结构中的 con 字段，该字段长 24 bit，每个方向占 6 bit，
+比如 con 字段的二进制值为 000001 000010 000000 000100 时，意义如下：
+左方向，该 Span 与 layer id 为 1 的 Span 连通
+上方向，该 Span 与 layer id 为 2 的 Span 连通
+右方向，该 Span 无连通 Span
+下方向，该 Span 与 layer id 为 4 的 Span 连通
+layer id 指在该 XZ 坐标下，可能有多个 Compact Span，因此 layer id 用来区分是第几层的 Span。
+*/
 struct rcCompactSpan
 {
 	unsigned short y;			///< The lower extent of the span. (Measured from the heightfield's base.)
@@ -373,6 +384,7 @@ struct rcCompactHeightfield
 	//float cs;					///< The size of each cell. (On the xz-plane.)
 	//float ch;					///< The height of each cell. (The minimum increment along the y-axis.)
 	rcCompactCell* cells;		///< Array of cells. [Size: #width*#height]
+	//std::unordered_map<int, std::list< rcCompactCell>> cells;
 	rcCompactSpan* spans;		///< Array of spans. [Size: #spanCount]
 	unsigned short* dist;		///< Array containing border distance data. [Size: #spanCount]
 	unsigned char* areas;		///< Array containing area id data. [Size: #spanCount]

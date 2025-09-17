@@ -128,6 +128,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 				}
 				
 				// At least one missing neighbour, so this is a boundary cell.
+				// 至少有一个缺失的邻居，所以这是一个边界单元。
 				if (neighborCount != 4)
 				{
 					distanceToBoundary[spanIndex] = 0;
@@ -151,7 +152,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 
 				if (rcGetCon(span, 0) != RC_NOT_CONNECTED)
 				{
-					// (-1,0)
+					// (-1,0) 左
 					const int aX = x + rcGetDirOffsetX(0);
 					const int aY = z + rcGetDirOffsetY(0);
 					const int aIndex = (int)compactHeightfield.cells[aX + aY * xSize].index + rcGetCon(span, 0);
@@ -162,7 +163,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 						distanceToBoundary[spanIndex] = newDistance;
 					}
 
-					// (-1,-1)
+					// (-1,-1) 左下
 					if (rcGetCon(aSpan, 3) != RC_NOT_CONNECTED)
 					{
 						const int bX = aX + rcGetDirOffsetX(3);
@@ -177,7 +178,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 				}
 				if (rcGetCon(span, 3) != RC_NOT_CONNECTED)
 				{
-					// (0,-1)
+					// (0,-1) 下
 					const int aX = x + rcGetDirOffsetX(3);
 					const int aY = z + rcGetDirOffsetY(3);
 					const int aIndex = (int)compactHeightfield.cells[aX + aY * xSize].index + rcGetCon(span, 3);
@@ -188,7 +189,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 						distanceToBoundary[spanIndex] = newDistance;
 					}
 
-					// (1,-1)
+					// (1,-1) 右下
 					if (rcGetCon(aSpan, 2) != RC_NOT_CONNECTED)
 					{
 						const int bX = aX + rcGetDirOffsetX(2);
@@ -218,7 +219,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 
 				if (rcGetCon(span, 2) != RC_NOT_CONNECTED)
 				{
-					// (1,0)
+					// (1,0) 右
 					const int aX = x + rcGetDirOffsetX(2);
 					const int aY = z + rcGetDirOffsetY(2);
 					const int aIndex = (int)compactHeightfield.cells[aX + aY * xSize].index + rcGetCon(span, 2);
@@ -229,7 +230,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 						distanceToBoundary[spanIndex] = newDistance;
 					}
 
-					// (1,1)
+					// (1,1) 右上
 					if (rcGetCon(aSpan, 1) != RC_NOT_CONNECTED)
 					{
 						const int bX = aX + rcGetDirOffsetX(1);
@@ -244,7 +245,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 				}
 				if (rcGetCon(span, 1) != RC_NOT_CONNECTED)
 				{
-					// (0,1)
+					// (0,1) 上
 					const int aX = x + rcGetDirOffsetX(1);
 					const int aY = z + rcGetDirOffsetY(1);
 					const int aIndex = (int)compactHeightfield.cells[aX + aY * xSize].index + rcGetCon(span, 1);
@@ -255,7 +256,7 @@ bool rcErodeWalkableArea(rcContext* context, const int erosionRadius, rcCompactH
 						distanceToBoundary[spanIndex] = newDistance;
 					}
 
-					// (-1,1)
+					// (-1,1) 左上
 					if (rcGetCon(aSpan, 0) != RC_NOT_CONNECTED)
 					{
 						const int bX = aX + rcGetDirOffsetX(0);
