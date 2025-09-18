@@ -5,9 +5,12 @@ workspace "NavMeshScene"
     language "C++"
     includedirs {
         "..",
-        "../Detour/Include",
-        "../DetourTileCache/Include",
-        "../Contrib/fastlz",
+		"../RecastNavigation/Common",
+        "../RecastNavigation/Detour/Include",
+        "../RecastNavigation/DetourTileCache/Include",
+		"../RecastNavigation/DetourCrowd/Include",
+		"../RecastNavigation/Recast/Include",
+        "../RecastNavigation/Contrib/fastlz",
     }
     flags {
         "C++11",
@@ -32,9 +35,12 @@ project "NavMeshScene"
     files {
         "../*.h",
         "../*.cpp",
-        "../Detour/**",
-        "../DetourTileCache/**",
-        "../Contrib/fastlz/**",
+        "../RecastNavigation/Common/**",
+		"../RecastNavigation/Detour/**",
+        "../RecastNavigation/DetourTileCache/**",
+		"../RecastNavigation/DetourCrowd/**",
+		"../RecastNavigation/Recast/**",
+        "../RecastNavigation/Contrib/fastlz/**",
         "../aoi/impl/*.h",
         "../aoi/*.h",
     }
@@ -59,9 +65,9 @@ project "example2"
         "../example2/Contrib/SDL/include/",
         "../example2/Contrib/",
         "../example2/DebugUtils/Include/",
-        "../example2/Recast/Include/",
+        -- "../example2/Recast/Include/",
         -- "../example2/Detour/Include/",
-        "../example2/DetourCrowd/Include/",
+        -- "../example2/DetourCrowd/Include/",
         -- "../example2/DetourTileCache/Include/",
         "../example2/RecastDemo/Include/",
     }
